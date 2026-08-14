@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A Fairways & Friends browser golf game prototype."
+    />
+    <meta name="theme-color" content="#24150f" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>Fairways & Friends — Pocket Golf</title>
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="game-card" aria-labelledby="game-title">
+        <div class="game-heading">
+          <p class="eyebrow">PROJECT 1 · TECHNICAL FOUNDATION</p>
+          <h1 id="game-title">Fairways &amp; Friends Pocket Golf</h1>
+        </div>
+
+        <div
+          id="game-container"
+          aria-label="Fairways and Friends golf game"
+          role="application"
+        ></div>
+
+        <div class="control-note">
+          <span><kbd>←</kbd><kbd>→</kbd> aim</span>
+          <span><kbd>↑</kbd><kbd>↓</kbd> club</span>
+          <span><kbd>Space</kbd> swing</span>
+          <span><kbd>Esc</kbd> pause</span>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
