@@ -1,37 +1,41 @@
-# Upload this project to GitHub
+# Update the GitHub project to v0.2
 
 Repository: `bonganimoyo95-jpg/golf-game`
 
-## Browser method
+## Upload through GitHub
 
-1. Extract `golf-game-starter.zip` on your computer.
+1. Extract `golf-game-physics-v0.2.zip` on your computer.
 2. Open the extracted `golf-game` folder.
-3. Open your `golf-game` repository on GitHub.
+3. Open the existing `golf-game` repository on GitHub.
 4. Select **Add file**, then **Upload files**.
 5. Drag everything from inside the extracted `golf-game` folder into GitHub's upload area.
-6. Wait until every file finishes uploading.
-7. In the commit-message field, enter:
+6. Allow GitHub to replace the files that already exist and add the new files.
+7. Enter this commit message:
 
-   `Set up initial Phaser game project`
+   `Add deterministic shot physics sandbox`
 
-8. Keep **Commit directly to the main branch** selected.
-9. Select **Commit changes**.
+8. Commit the changes to `main`.
 
-Do not upload the ZIP itself. GitHub needs the extracted files, including `package.json`, `src`, `public` and `docs`.
+Do not upload the ZIP itself, `node_modules`, `dist` or `tsconfig.tsbuildinfo`.
 
-## Expected top-level files
+## Refresh the open Codespace
 
-- `.gitignore`
-- `.nvmrc`
-- `README.md`
-- `UPLOAD_TO_GITHUB.md`
-- `index.html`
-- `package-lock.json`
-- `package.json`
-- `tsconfig.json`
-- `vite.config.ts`
-- `docs/`
-- `public/`
-- `src/`
+1. Return to the Codespace.
+2. Stop the running game with **Ctrl+C** in the terminal.
+3. Run:
 
-Do not upload `node_modules` or `dist`. They are generated locally and are deliberately excluded from the ZIP.
+   ```bash
+   git pull
+   npm install
+   npm run dev
+   ```
+
+4. Reopen or refresh the forwarded port `5173` game tab.
+
+## Expected new files
+
+- `CHANGELOG.md`
+- `docs/PROJECT_1_CHECKPOINT_2.md`
+- `src/game/courseModel.ts`
+- `src/game/physics/shotPhysics.ts`
+- `src/game/physics/shotPhysics.test.ts`

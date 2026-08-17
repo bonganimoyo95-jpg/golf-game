@@ -1,8 +1,8 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains the first checkpoint of Project 1: the technical foundation.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 2: the deterministic shot-physics sandbox.
 
-## What works in this checkpoint
+## What works now
 
 - Responsive 352 × 440 Phaser canvas
 - Fairways & Friends placeholder visual system
@@ -11,17 +11,23 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Four configurable clubs
 - Left/right aiming and projected landing area
 - Three-input swing demonstration: start, power and accuracy
-- Placeholder ball-flight animation
+- Deterministic club, power, accuracy, aim, wind and lie calculations
+- Different carry, trajectory and rollout behavior for each club
+- Airborne flight, landing, bounce and rollout phases
+- Ball position retained between shots
+- Live distance-to-pin and final-lie updates
+- Fairway, rough, bunker, green, water and out-of-bounds detection
+- One-stroke penalties that return the ball to its previous valid position
 - Keyboard and touch controls
 - Pause, restart and return-to-title controls
 
-The shot animation is intentionally labelled as a preview. Final terrain detection, ball physics, putting and scoring arrive in later checkpoints.
+Putting, cup capture, hole completion and final presentation polish remain intentionally deferred.
 
 ## Run the game locally
 
 ### Requirements
 
-- Node.js 22 LTS
+- Node.js 22 or newer, or a GitHub Codespace
 - npm, which is included with Node.js
 
 ### Steps
@@ -55,6 +61,7 @@ The shot animation is intentionally labelled as a preview. Final terrain detecti
 
 ```bash
 npm run typecheck
+npm test
 npm run build
 ```
 
@@ -64,6 +71,7 @@ The production website is generated in `dist/`. That folder is intentionally ign
 
 - [`docs/PROJECT_0_SPEC.md`](docs/PROJECT_0_SPEC.md) — approved product specification
 - [`docs/PROJECT_1_CHECKPOINT.md`](docs/PROJECT_1_CHECKPOINT.md) — scope and next tasks
+- [`docs/PROJECT_1_CHECKPOINT_2.md`](docs/PROJECT_1_CHECKPOINT_2.md) — physics checkpoint record
 
 ## Technical choices
 

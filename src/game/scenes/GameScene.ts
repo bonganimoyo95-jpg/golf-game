@@ -1,7 +1,16 @@
 import Phaser from 'phaser';
 import { drawCourseMapBase, drawLandscape } from '../courseArt';
-import { CLUBS, PROTOTYPE_HOLE } from '../data';
+import {
+  PIN_POSITION,
+  TEE_POSITION,
+  distanceToPin,
+  lieLabel,
+  worldToMap,
+  type WorldPosition,
+} from '../courseModel';
+import { CLUBS, PROTOTYPE_HOLE, type Lie } from '../data';
 import { GAME_HEIGHT, GAME_WIDTH, SCENES } from '../constants';
+import { calculateShot, sampleTrajectory, type ShotResult } from '../physics/shotPhysics';
 import { COLORS, FONT_FAMILY } from '../theme';
 import { createButton } from '../ui/createButton';
 
@@ -16,6 +25,8 @@ export class GameScene extends Phaser.Scene {
   private meterPosition = 0;
   private selectedPower = 0;
   private lastSwingInputAt = -1000;
+  private ballPosition: WorldPosition = { ...TEE_POSITION };
+  private currentLie: Lie = 'tee';
 
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private spaceKey!: Phaser.Input.Keyboard.Key;
@@ -24,8 +35,10 @@ export class GameScene extends Phaser.Scene {
   private restartKey!: Phaser.Input.Keyboard.Key;
 
   private statusText!: Phaser.GameObjects.Text;
+  private distanceText!: Phaser.GameObjects.Text;
   private clubText!: Phaser.GameObjects.Text;
   private aimText!: Phaser.GameObjects.Text;
+  private lieText!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
   private meterLabel!: Phaser.GameObjects.Text;
   private aimGraphics!: Phaser.GameObjects.Graphics;
@@ -110,6 +123,8 @@ export class GameScene extends Phaser.Scene {
     this.meterPosition = 0;
     this.selectedPower = 0;
     this.lastSwingInputAt = -1000;
+    this.ballPosition = { ...TEE_POSITION };
+    this.currentLie = 'tee';
     this.pauseObjects = [];
   }
 
@@ -126,7 +141,7 @@ export class GameScene extends Phaser.Scene {
     this.drawGolfer();
 
     this.add
-      .text(8, 8, `HOLE ${PROTOTYPE_HOLE.number}`, {
+      .text(8, 7, `H${PROTOTYPE_HOLE.number}`, {
         fontFamily: FONT_FAMILY,
         fontSize: '10px',
         fontStyle: 'bold',
@@ -135,7 +150,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(3);
 
     this.add
-      .text(67, 8, `PAR ${PROTOTYPE_HOLE.par}`, {
+      .text(36, 7, `PAR ${PROTOTYPE_HOLE.par}`, {
         fontFamily: FONT_FAMILY,
         fontSize: '10px',
         fontStyle: 'bold',
@@ -144,7 +159,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(3);
 
     this.add
-      .text(227, 8, `WIND ${PROTOTYPE_HOLE.wind.direction} ${PROTOTYPE_HOLE.wind.speed}`, {
+      .text(232, 7, `WIND ${PROTOTYPE_HOLE.wind.direction} ${PROTOTYPE_HOLE.wind.speed}`, {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         color: '#c8b899',
@@ -154,9 +169,18 @@ export class GameScene extends Phaser.Scene {
 
   private createDynamicInterface(): void {
     this.statusText = this.add
-      .text(118, 8, 'SHOT 1', {
+      .text(87, 7, 'SHOT 1', {
         fontFamily: FONT_FAMILY,
         fontSize: '10px',
+        fontStyle: 'bold',
+        color: '#f3e6c8',
+      })
+      .setDepth(3);
+
+    this.distanceText = this.add
+      .text(145, 7, '', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '9px',
         fontStyle: 'bold',
         color: '#f3e6c8',
       })
@@ -165,13 +189,21 @@ export class GameScene extends Phaser.Scene {
     this.aimGraphics = this.add.graphics().setDepth(4);
     this.meterGraphics = this.add.graphics().setDepth(4);
 
-    this.mapBall = this.add.circle(176, 177, 4, COLORS.white).setStrokeStyle(1, COLORS.espresso).setDepth(5);
-    this.flightBall = this.add.circle(113, 293, 3, COLORS.white).setDepth(5).setVisible(false);
+    const teeOnMap = worldToMap(this.ballPosition);
+    this.mapBall = this.add
+      .circle(teeOnMap.x, teeOnMap.y, 4, COLORS.white)
+      .setStrokeStyle(1, COLORS.espresso)
+      .setDepth(5);
+    this.flightBall = this.add
+      .circle(113, 329, 3, COLORS.white)
+      .setStrokeStyle(1, COLORS.espresso)
+      .setDepth(5)
+      .setVisible(false);
 
     this.clubText = this.add
       .text(176, 211, '', {
         fontFamily: FONT_FAMILY,
-        fontSize: '11px',
+        fontSize: '10px',
         fontStyle: 'bold',
         color: '#24150f',
         backgroundColor: '#f3e6c8',
@@ -180,19 +212,28 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(5);
 
+    this.lieText = this.add
+      .text(16, 315, '', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '9px',
+        fontStyle: 'bold',
+        color: '#24150f',
+      })
+      .setDepth(5);
+
     this.aimText = this.add
       .text(16, 329, '', {
         fontFamily: FONT_FAMILY,
-        fontSize: '10px',
+        fontSize: '9px',
         fontStyle: 'bold',
-        color: '#f3e6c8',
+        color: '#24150f',
       })
       .setDepth(5);
 
     this.instructionText = this.add
-      .text(176, 337, '', {
+      .text(176, 346, '', {
         fontFamily: FONT_FAMILY,
-        fontSize: '9px',
+        fontSize: '8px',
         fontStyle: 'bold',
         color: '#24150f',
         align: 'center',
@@ -201,7 +242,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(5);
 
     this.meterLabel = this.add
-      .text(246, 329, '', {
+      .text(246, 333, '', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         fontStyle: 'bold',
@@ -260,7 +301,7 @@ export class GameScene extends Phaser.Scene {
     if (this.phase !== 'setup') {
       return;
     }
-    this.aimDegrees = Phaser.Math.Clamp(this.aimDegrees + delta, -24, 24);
+    this.aimDegrees = Phaser.Math.Clamp(this.aimDegrees + delta, -30, 30);
     this.refreshSetupDisplay();
   }
 
@@ -268,15 +309,37 @@ export class GameScene extends Phaser.Scene {
     if (this.phase !== 'setup') {
       return;
     }
-    this.clubIndex = Phaser.Math.Wrap(this.clubIndex + delta, 0, CLUBS.length);
+
+    const allowedIndices = this.currentLie === 'green' ? [3] : [0, 1, 2];
+    const currentAllowedPosition = Math.max(0, allowedIndices.indexOf(this.clubIndex));
+    const nextAllowedPosition = Phaser.Math.Wrap(
+      currentAllowedPosition + delta,
+      0,
+      allowedIndices.length,
+    );
+    this.clubIndex = allowedIndices[nextAllowedPosition];
     this.refreshSetupDisplay();
   }
 
   private refreshSetupDisplay(): void {
+    if (this.currentLie === 'green') {
+      this.clubIndex = 3;
+    } else if (CLUBS[this.clubIndex].isPutter) {
+      this.clubIndex = 2;
+    }
+
     const club = CLUBS[this.clubIndex];
-    this.clubText.setText(`${club.shortName} · ${club.maxDistanceMetres} M`);
-    this.aimText.setText(`AIM ${this.aimDegrees > 0 ? '+' : ''}${this.aimDegrees}°`);
+    const mapPosition = worldToMap(this.ballPosition);
+    this.mapBall.setPosition(mapPosition.x, mapPosition.y);
+    this.clubText.setText(
+      club.isPutter
+        ? `${club.shortName} · ${club.maxDistanceMetres} M`
+        : `${club.shortName} · ${club.maxDistanceMetres} M · ${club.loftDegrees}°`,
+    );
+    this.aimText.setText(`AIM ${this.aimDegrees > 0 ? '+' : ''}${Math.round(this.aimDegrees)}°`);
+    this.lieText.setText(`LIE ${lieLabel(this.currentLie)}`);
     this.statusText.setText(`SHOT ${this.strokeCount + 1}`);
+    this.distanceText.setText(`${Math.round(distanceToPin(this.ballPosition))} M LEFT`);
     this.instructionText.setText('AIM · PICK CLUB · PRESS SWING');
     this.meterLabel.setText('READY');
     this.meterPosition = 0;
@@ -285,16 +348,27 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawAimGuide(): void {
-    const clubLandingY = [68, 92, 118, 145][this.clubIndex];
-    const targetX = 176 + this.aimDegrees * 2.1;
+    const projection = calculateShot({
+      start: this.ballPosition,
+      club: CLUBS[this.clubIndex],
+      power: 1,
+      accuracyError: 0,
+      aimDegrees: this.aimDegrees,
+      wind: PROTOTYPE_HOLE.wind,
+      startingLie: this.currentLie,
+    });
+    const start = worldToMap(this.ballPosition);
+    const landing = worldToMap(projection.carryEnd);
+    const final = worldToMap(projection.visualEnd);
 
     this.aimGraphics.clear();
-    this.aimGraphics.lineStyle(2, COLORS.cream, 0.85);
-    this.aimGraphics.lineBetween(176, 177, targetX, clubLandingY);
+    this.aimGraphics.lineStyle(2, COLORS.cream, 0.82);
+    this.aimGraphics.lineBetween(start.x, start.y, landing.x, landing.y);
     this.aimGraphics.lineStyle(1, COLORS.orange, 0.9);
-    this.aimGraphics.strokeCircle(targetX, clubLandingY, 10);
-    this.aimGraphics.lineBetween(targetX - 4, clubLandingY, targetX + 4, clubLandingY);
-    this.aimGraphics.lineBetween(targetX, clubLandingY - 4, targetX, clubLandingY + 4);
+    this.aimGraphics.lineBetween(landing.x, landing.y, final.x, final.y);
+    this.aimGraphics.strokeCircle(landing.x, landing.y, 9);
+    this.aimGraphics.lineBetween(landing.x - 4, landing.y, landing.x + 4, landing.y);
+    this.aimGraphics.lineBetween(landing.x, landing.y - 4, landing.x, landing.y + 4);
   }
 
   private drawMeter(): void {
@@ -357,55 +431,78 @@ export class GameScene extends Phaser.Scene {
     }
 
     const accuracyError = (this.meterPosition - 0.5) * 2;
+    const result = calculateShot({
+      start: this.ballPosition,
+      club: CLUBS[this.clubIndex],
+      power: this.selectedPower,
+      accuracyError,
+      aimDegrees: this.aimDegrees,
+      wind: PROTOTYPE_HOLE.wind,
+      startingLie: this.currentLie,
+    });
+
     this.phase = 'result';
-    this.strokeCount += 1;
+    this.strokeCount += result.strokeCost;
     this.statusText.setText(`SHOT ${this.strokeCount}`);
-    this.instructionText.setText(Math.abs(accuracyError) < 0.12 ? 'PERFECT!' : 'SHOT AWAY!');
-    this.launchShotPreview(accuracyError);
+    this.instructionText.setText(Math.abs(accuracyError) < 0.12 ? 'PERFECT CONTACT!' : 'SHOT AWAY!');
+    this.aimGraphics.clear();
+    this.launchCalculatedShot(result);
   }
 
-  private launchShotPreview(accuracyError: number): void {
-    const club = CLUBS[this.clubIndex];
-    const distance = Math.round(club.maxDistanceMetres * (0.45 + this.selectedPower * 0.55));
-    const baseLandingY = [68, 92, 118, 145][this.clubIndex];
-    const landingX = Phaser.Math.Clamp(
-      176 + this.aimDegrees * 2.1 + accuracyError * 38,
-      24,
-      328,
-    );
+  private launchCalculatedShot(result: ShotResult): void {
+    this.flightBall.setPosition(113, 329).setVisible(true);
+    const animation = { progress: 0 };
 
-    this.flightBall.setPosition(113, 293).setVisible(true);
-    const flight = { progress: 0 };
     this.tweens.add({
-      targets: flight,
+      targets: animation,
       progress: 1,
-      duration: 900,
-      ease: 'Sine.easeInOut',
+      duration: result.animationDurationMs,
+      ease: 'Linear',
       onUpdate: () => {
-        const progress = flight.progress;
-        this.flightBall.setPosition(
-          Phaser.Math.Linear(113, 326, progress),
-          Phaser.Math.Linear(293, 278, progress) - Math.sin(progress * Math.PI) * 82,
-        );
-      },
-      onComplete: () => this.flightBall.setVisible(false),
-    });
+        const sample = sampleTrajectory(result, animation.progress);
+        const mapPosition = worldToMap(sample);
+        const sideViewX = Phaser.Math.Linear(113, 330, animation.progress);
+        const sideViewY = 329 - Math.min(86, sample.height * 2.25);
 
-    this.tweens.add({
-      targets: this.mapBall,
-      x: landingX,
-      y: baseLandingY,
-      duration: 900,
-      ease: 'Sine.easeOut',
+        this.mapBall.setPosition(mapPosition.x, mapPosition.y);
+        this.flightBall.setPosition(sideViewX, sideViewY);
+        this.meterLabel.setText(sample.phase.toUpperCase());
+      },
       onComplete: () => {
-        this.instructionText.setText(`PREVIEW: ${distance} M · PHYSICS COMES NEXT`);
-        this.time.delayedCall(1200, () => {
-          this.mapBall.setPosition(176, 177);
-          this.phase = 'setup';
-          this.refreshSetupDisplay();
-        });
+        this.flightBall.setVisible(false);
+        this.resolveCalculatedShot(result);
       },
     });
+  }
+
+  private resolveCalculatedShot(result: ShotResult): void {
+    this.ballPosition = { ...result.resolvedEnd };
+    this.currentLie = result.penalty ? result.startingLie : result.finalLie;
+    const resolvedMapPosition = worldToMap(this.ballPosition);
+    this.mapBall.setPosition(resolvedMapPosition.x, resolvedMapPosition.y);
+    this.distanceText.setText(`${Math.round(distanceToPin(this.ballPosition))} M LEFT`);
+
+    if (result.penalty) {
+      const penaltyLabel = lieLabel(result.finalLie);
+      this.instructionText.setText(`${penaltyLabel} · +1 PENALTY · BALL RETURNED`);
+    } else {
+      this.instructionText.setText(
+        `${Math.round(result.carryMetres)} CARRY + ${Math.round(result.rolloutMetres)} ROLL = ${Math.round(result.totalMetres)} M · ${lieLabel(result.finalLie)}`,
+      );
+    }
+
+    this.aimDegrees = this.directAimToPin();
+    this.time.delayedCall(1650, () => {
+      this.phase = 'setup';
+      this.refreshSetupDisplay();
+    });
+  }
+
+  private directAimToPin(): number {
+    const lateral = PIN_POSITION.x - this.ballPosition.x;
+    const forward = PIN_POSITION.y - this.ballPosition.y;
+    const directDegrees = (Math.atan2(lateral, forward) * 180) / Math.PI;
+    return Phaser.Math.Clamp(directDegrees, -30, 30);
   }
 
   private drawGolfer(): void {
