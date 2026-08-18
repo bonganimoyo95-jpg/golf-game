@@ -11,6 +11,14 @@ import {
 import { CLUBS, PROTOTYPE_HOLE, type Lie } from '../data';
 import { GAME_HEIGHT, GAME_WIDTH, SCENES } from '../constants';
 import { calculateShot, sampleTrajectory, type ShotResult } from '../physics/shotPhysics';
+import {
+  LATE_CONTACT_LIMIT,
+  accuracyErrorAt,
+  advanceDownswingPosition,
+  advancePowerPosition,
+  lockPowerAt,
+  meterAngleForPosition,
+} from '../swingMeter';
 import { COLORS, FONT_FAMILY } from '../theme';
 import { createButton } from '../ui/createButton';
 
@@ -100,17 +108,27 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.phase === 'power') {
-      this.meterPosition += delta * 0.00072;
-      if (this.meterPosition > 1) {
-        this.meterPosition = 0;
+      const advance = advancePowerPosition(this.meterPosition, delta);
+      this.meterPosition = advance.position;
+
+      if (advance.reachedMaximum) {
+        this.selectedPower = 1;
+        this.phase = 'accuracy';
+        this.instructionText.setText('MAX POWER · STOP AT THE WHITE LINE');
       }
       this.drawMeter();
     } else if (this.phase === 'accuracy') {
-      this.meterPosition -= delta * 0.00092;
-      if (this.meterPosition < 0) {
-        this.meterPosition = 1;
-      }
+      const advance = advanceDownswingPosition(
+        this.meterPosition,
+        this.selectedPower,
+        delta,
+      );
+      this.meterPosition = advance.position;
       this.drawMeter();
+
+      if (advance.missedContact) {
+        this.strikeBall(accuracyErrorAt(LATE_CONTACT_LIMIT));
+      }
     }
   }
 
@@ -187,7 +205,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(3);
 
     this.aimGraphics = this.add.graphics().setDepth(4);
-    this.meterGraphics = this.add.graphics().setDepth(4);
+    this.meterGraphics = this.add.graphics().setDepth(3);
 
     const teeOnMap = worldToMap(this.ballPosition);
     this.mapBall = this.add
@@ -201,7 +219,7 @@ export class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.clubText = this.add
-      .text(176, 211, '', {
+      .text(247, 216, '', {
         fontFamily: FONT_FAMILY,
         fontSize: '10px',
         fontStyle: 'bold',
@@ -213,7 +231,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(5);
 
     this.lieText = this.add
-      .text(16, 315, '', {
+      .text(178, 270, '', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         fontStyle: 'bold',
@@ -222,7 +240,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(5);
 
     this.aimText = this.add
-      .text(16, 329, '', {
+      .text(178, 286, '', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         fontStyle: 'bold',
@@ -231,7 +249,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(5);
 
     this.instructionText = this.add
-      .text(176, 346, '', {
+      .text(250, 341, '', {
         fontFamily: FONT_FAMILY,
         fontSize: '8px',
         fontStyle: 'bold',
@@ -239,10 +257,11 @@ export class GameScene extends Phaser.Scene {
         align: 'center',
       })
       .setOrigin(0.5)
+      .setWordWrapWidth(180)
       .setDepth(5);
 
     this.meterLabel = this.add
-      .text(246, 333, '', {
+      .text(250, 316, '', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         fontStyle: 'bold',
@@ -343,6 +362,7 @@ export class GameScene extends Phaser.Scene {
     this.instructionText.setText('AIM · PICK CLUB · PRESS SWING');
     this.meterLabel.setText('READY');
     this.meterPosition = 0;
+    this.selectedPower = 0;
     this.drawAimGuide();
     this.drawMeter();
   }
@@ -372,33 +392,66 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawMeter(): void {
-    const centreX = 246;
-    const centreY = 306;
-    const radius = 35;
-    const angle = Math.PI + this.meterPosition * Math.PI;
-    const markerX = centreX + Math.cos(angle) * radius;
-    const markerY = centreY + Math.sin(angle) * radius;
+    const centreX = 92;
+    const centreY = 281;
+    const radius = 59;
+    const contactAngle = Math.PI / 2;
+    const maximumAngle = Math.PI * 1.5;
+    const markerAngle = meterAngleForPosition(this.meterPosition);
+
+    const drawArcSegment = (startAngle: number, endAngle: number, color: number): void => {
+      this.meterGraphics.lineStyle(10, color, 1);
+      this.meterGraphics.beginPath();
+      this.meterGraphics.arc(centreX, centreY, radius, startAngle, endAngle, false);
+      this.meterGraphics.strokePath();
+    };
+
+    const drawRadialLine = (
+      angle: number,
+      innerRadius: number,
+      outerRadius: number,
+      width: number,
+      color: number,
+    ): void => {
+      this.meterGraphics.lineStyle(width, color, 1);
+      this.meterGraphics.lineBetween(
+        centreX + Math.cos(angle) * innerRadius,
+        centreY + Math.sin(angle) * innerRadius,
+        centreX + Math.cos(angle) * outerRadius,
+        centreY + Math.sin(angle) * outerRadius,
+      );
+    };
 
     this.meterGraphics.clear();
-    this.meterGraphics.lineStyle(8, COLORS.tobacco, 1);
+
+    this.meterGraphics.lineStyle(14, COLORS.espresso, 0.92);
     this.meterGraphics.beginPath();
-    this.meterGraphics.arc(centreX, centreY, radius, Math.PI, Math.PI * 2, false);
+    this.meterGraphics.arc(centreX, centreY, radius, 0, maximumAngle, false);
     this.meterGraphics.strokePath();
 
-    this.meterGraphics.lineStyle(6, COLORS.marigold, 1);
-    this.meterGraphics.beginPath();
-    this.meterGraphics.arc(centreX, centreY, radius, Math.PI * 1.45, Math.PI * 1.55, false);
-    this.meterGraphics.strokePath();
+    drawArcSegment(0, contactAngle, COLORS.fairway);
+    drawArcSegment(contactAngle, Math.PI, COLORS.green);
+    drawArcSegment(Math.PI, Math.PI * 1.25, COLORS.marigold);
+    drawArcSegment(Math.PI * 1.25, Math.PI * 1.4, COLORS.orange);
+    drawArcSegment(Math.PI * 1.4, maximumAngle, COLORS.red);
 
-    this.meterGraphics.fillStyle(COLORS.orange, 1);
-    this.meterGraphics.fillCircle(markerX, markerY, 5);
-    this.meterGraphics.lineStyle(1, COLORS.cream, 1);
-    this.meterGraphics.strokeCircle(markerX, markerY, 5);
+    drawRadialLine(Math.PI, radius - 8, radius + 8, 3, COLORS.creamMuted);
+    drawRadialLine(Math.PI * 1.25, radius - 8, radius + 8, 3, COLORS.creamMuted);
+
+    if (this.phase === 'power' || this.phase === 'accuracy') {
+      drawRadialLine(markerAngle, radius - 10, radius + 10, 5, COLORS.espresso);
+      drawRadialLine(markerAngle, radius - 8, radius + 8, 2, COLORS.cream);
+    }
+
+    drawRadialLine(contactAngle, radius - 12, radius + 12, 4, COLORS.white);
+
+    this.meterGraphics.fillStyle(COLORS.espresso, 1);
+    this.meterGraphics.fillCircle(centreX, centreY, 3);
 
     if (this.phase === 'power') {
       this.meterLabel.setText(`POWER ${Math.round(this.meterPosition * 100)}%`);
     } else if (this.phase === 'accuracy') {
-      this.meterLabel.setText('ACCURACY');
+      this.meterLabel.setText(`${Math.round(this.selectedPower * 100)}% · CONTACT`);
     }
   }
 
@@ -416,21 +469,28 @@ export class GameScene extends Phaser.Scene {
     if (this.phase === 'setup') {
       this.phase = 'power';
       this.meterPosition = 0;
-      this.instructionText.setText('PRESS SWING TO LOCK POWER');
+      this.selectedPower = 0;
+      this.instructionText.setText('PRESS SWING ONCE TO SET POWER');
       this.drawMeter();
       return;
     }
 
     if (this.phase === 'power') {
-      this.selectedPower = Math.max(0.15, this.meterPosition);
+      this.selectedPower = lockPowerAt(this.meterPosition);
       this.phase = 'accuracy';
-      this.meterPosition = 1;
-      this.instructionText.setText('PRESS SWING NEAR THE CENTRE');
+      this.instructionText.setText('STOP THE RETURN AT THE WHITE LINE');
       this.drawMeter();
       return;
     }
 
-    const accuracyError = (this.meterPosition - 0.5) * 2;
+    this.strikeBall(accuracyErrorAt(this.meterPosition));
+  }
+
+  private strikeBall(accuracyError: number): void {
+    if (this.phase !== 'accuracy') {
+      return;
+    }
+
     const result = calculateShot({
       start: this.ballPosition,
       club: CLUBS[this.clubIndex],
@@ -444,7 +504,13 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'result';
     this.strokeCount += result.strokeCost;
     this.statusText.setText(`SHOT ${this.strokeCount}`);
-    this.instructionText.setText(Math.abs(accuracyError) < 0.12 ? 'PERFECT CONTACT!' : 'SHOT AWAY!');
+    this.instructionText.setText(
+      Math.abs(accuracyError) < 0.12
+        ? 'PERFECT CONTACT!'
+        : accuracyError > 0
+          ? 'EARLY CONTACT!'
+          : 'LATE CONTACT!',
+    );
     this.aimGraphics.clear();
     this.launchCalculatedShot(result);
   }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 — One-pass swing meter
+
+- Replaced the semicircular placeholder with a 3/4-circle meter around the golfer.
+- Added fixed 50% and 75% power ticks and a white contact line.
+- Made power selection reverse the marker from its exact locked position.
+- Made higher-power selections produce a faster downswing.
+- Removed looping and added automatic maximum-power and late-miss outcomes.
+- Added early, perfect and late contact feedback plus automated meter tests.
+
 ## 0.2.0 — Shot physics sandbox
 
 - Replaced the scripted shot preview with deterministic shot calculations.

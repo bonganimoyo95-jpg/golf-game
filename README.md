@@ -10,7 +10,9 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Split overhead-map and golfer-view game screen
 - Four configurable clubs
 - Left/right aiming and projected landing area
-- Three-input swing demonstration: start, power and accuracy
+- One-pass 3/4-circle swing meter: start, select power and strike at the contact line
+- Faster downswing timing after higher-power selections
+- Early and late contact feedback with no meter looping or second chance
 - Deterministic club, power, accuracy, aim, wind and lie calculations
 - Different carry, trajectory and rollout behavior for each club
 - Airborne flight, landing, bounce and rollout phases
@@ -53,7 +55,7 @@ Putting, cup capture, hole completion and final presentation polish remain inten
 | --- | --- | --- |
 | Aim | Left / Right Arrow | Left / Right buttons |
 | Change club | Up / Down Arrow | Club button |
-| Start and lock swing meter | Space or Enter | Swing button |
+| Start, select power and strike | Space or Enter | Swing button |
 | Pause or resume | Escape | Pause button |
 | Restart | `R` | Reset button or pause menu |
 

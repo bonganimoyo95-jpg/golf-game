@@ -82,14 +82,15 @@ The reference game uses the following core structure:
 1. The overhead map shows the full hole, intended line and current ball position.
 2. The lower view shows the golfer, current lie and immediate surroundings.
 3. The player selects a club and adjusts the shot direction.
-4. A single semicircular meter handles both power and accuracy.
+4. A single 3/4-circle meter handles both power and accuracy.
 5. The first input starts the meter.
-6. The second input locks shot power near the top of the arc.
-7. The meter returns and the third input locks accuracy near the centre target.
-8. The golfer swings and the overhead map communicates ball travel.
-9. The ball finishes on a detected surface and the next shot begins.
-10. On the green, the game changes to a gridded putting view.
-11. The hole ends when the ball reaches the cup and the score is displayed.
+6. The second input locks shot power at its current position and immediately reverses the marker.
+7. Higher power produces a faster return, and the third input locks accuracy at the white contact line.
+8. The marker never loops or resets; maximum power and a missed contact line resolve automatically.
+9. The golfer swings and the overhead map communicates ball travel.
+10. The ball finishes on a detected surface and the next shot begins.
+11. On the green, the game changes to a gridded putting view.
+12. The hole ends when the ball reaches the cup and the score is displayed.
 
 The original also includes normal, punch and chip shots; forward/backspin aftertouch; Practice, Competition, Challenge and same-device Head-to-Head modes; an 18-hole course; equipment; money; caddie tips; records; and character attributes. Those systems are not required to prove the core golf experience.
 
@@ -299,6 +300,9 @@ The one-hole prototype is accepted only when all of the following are true:
 - [ ] The player can aim left and right.
 - [ ] The aim line and approximate landing area update correctly.
 - [ ] One deliberate input is required for each of start, power and accuracy.
+- [ ] The power marker reverses from the selected position without jumping, resetting or looping.
+- [ ] Higher selected power produces a faster return to the contact line.
+- [ ] Missing the maximum or contact line resolves automatically without another attempt.
 - [ ] Held or duplicated input does not skip a meter stage.
 - [ ] Early, centre and late accuracy inputs visibly change shot direction.
 
