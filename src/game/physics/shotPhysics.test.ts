@@ -54,4 +54,44 @@ describe('shot physics', () => {
     expect(waterShot.strokeCost).toBe(2);
     expect(waterShot.resolvedEnd).toEqual(TEE_POSITION);
   });
+
+  it('captures a controlled putt and finishes it at the pin', () => {
+    const putt = calculateShot({
+      ...baseInput,
+      start: { x: 0, y: 382 },
+      club: CLUBS[3],
+      power: 0.49,
+      startingLie: 'green',
+    });
+
+    expect(putt.holed).toBe(true);
+    expect(putt.resolvedEnd).toEqual({ x: 0, y: PROTOTYPE_HOLE.distanceMetres });
+  });
+
+  it('lets an overpowered putt run past the cup', () => {
+    const putt = calculateShot({
+      ...baseInput,
+      start: { x: 0, y: 382 },
+      club: CLUBS[3],
+      power: 1,
+      startingLie: 'green',
+    });
+
+    expect(putt.holed).toBe(false);
+    expect(putt.totalMetres).toBeGreaterThan(10);
+  });
+
+  it('can hole a recovery putt from beyond the cup', () => {
+    const putt = calculateShot({
+      ...baseInput,
+      start: { x: 0, y: 400 },
+      club: CLUBS[3],
+      power: 0.42,
+      aimDegrees: 180,
+      startingLie: 'green',
+    });
+
+    expect(putt.holed).toBe(true);
+    expect(putt.resolvedEnd).toEqual({ x: 0, y: PROTOTYPE_HOLE.distanceMetres });
+  });
 });

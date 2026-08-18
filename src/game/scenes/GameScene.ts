@@ -51,7 +51,9 @@ export class GameScene extends Phaser.Scene {
   private meterLabel!: Phaser.GameObjects.Text;
   private aimGraphics!: Phaser.GameObjects.Graphics;
   private meterGraphics!: Phaser.GameObjects.Graphics;
+  private puttingGraphics!: Phaser.GameObjects.Graphics;
   private golferGraphics!: Phaser.GameObjects.Graphics;
+  private puttingLabel!: Phaser.GameObjects.Text;
   private mapBall!: Phaser.GameObjects.Arc;
   private flightBall!: Phaser.GameObjects.Arc;
   private pauseObjects: Phaser.GameObjects.GameObject[] = [];
@@ -108,7 +110,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.phase === 'power') {
-      const advance = advancePowerPosition(this.meterPosition, delta);
+      const advance = advancePowerPosition(this.meterPosition, this.meterDelta(delta));
       this.meterPosition = advance.position;
 
       if (advance.reachedMaximum) {
@@ -121,7 +123,7 @@ export class GameScene extends Phaser.Scene {
       const advance = advanceDownswingPosition(
         this.meterPosition,
         this.selectedPower,
-        delta,
+        this.meterDelta(delta),
       );
       this.meterPosition = advance.position;
       this.drawMeter();
@@ -206,6 +208,7 @@ export class GameScene extends Phaser.Scene {
 
     this.aimGraphics = this.add.graphics().setDepth(4);
     this.meterGraphics = this.add.graphics().setDepth(3);
+    this.puttingGraphics = this.add.graphics().setDepth(2);
 
     const teeOnMap = worldToMap(this.ballPosition);
     this.mapBall = this.add
@@ -269,6 +272,17 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(5);
+
+    this.puttingLabel = this.add
+      .text(250, 246, 'PUTTING GREEN', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '9px',
+        fontStyle: 'bold',
+        color: '#24150f',
+      })
+      .setOrigin(0.5)
+      .setDepth(5)
+      .setVisible(false);
   }
 
   private createTouchControls(): void {
@@ -355,14 +369,19 @@ export class GameScene extends Phaser.Scene {
         ? `${club.shortName} · ${club.maxDistanceMetres} M`
         : `${club.shortName} · ${club.maxDistanceMetres} M · ${club.loftDegrees}°`,
     );
-    this.aimText.setText(`AIM ${this.aimDegrees > 0 ? '+' : ''}${Math.round(this.aimDegrees)}°`);
+    this.aimText.setText(
+      `${this.currentLie === 'green' ? 'LINE' : 'AIM'} ${this.aimDegrees > 0 ? '+' : ''}${Math.round(this.aimDegrees)}°`,
+    );
     this.lieText.setText(`LIE ${lieLabel(this.currentLie)}`);
     this.statusText.setText(`SHOT ${this.strokeCount + 1}`);
-    this.distanceText.setText(`${Math.round(distanceToPin(this.ballPosition))} M LEFT`);
-    this.instructionText.setText('AIM · PICK CLUB · PRESS SWING');
+    this.distanceText.setText(this.distanceLabel(this.ballPosition));
+    this.instructionText.setText(
+      this.currentLie === 'green' ? 'READ THE LINE · SET PUTT POWER' : 'AIM · PICK CLUB · PRESS SWING',
+    );
     this.meterLabel.setText('READY');
     this.meterPosition = 0;
     this.selectedPower = 0;
+    this.drawPuttingView();
     this.drawAimGuide();
     this.drawMeter();
   }
@@ -373,7 +392,7 @@ export class GameScene extends Phaser.Scene {
       club: CLUBS[this.clubIndex],
       power: 1,
       accuracyError: 0,
-      aimDegrees: this.aimDegrees,
+      aimDegrees: this.shotAimDegrees(),
       wind: PROTOTYPE_HOLE.wind,
       startingLie: this.currentLie,
     });
@@ -382,6 +401,18 @@ export class GameScene extends Phaser.Scene {
     const final = worldToMap(projection.visualEnd);
 
     this.aimGraphics.clear();
+
+    if (CLUBS[this.clubIndex].isPutter) {
+      const pin = worldToMap(PIN_POSITION);
+      this.aimGraphics.lineStyle(2, COLORS.cream, 0.9);
+      this.aimGraphics.lineBetween(start.x, start.y, final.x, final.y);
+      this.aimGraphics.lineStyle(1, COLORS.orange, 1);
+      this.aimGraphics.strokeCircle(final.x, final.y, 6);
+      this.aimGraphics.lineStyle(2, COLORS.white, 1);
+      this.aimGraphics.strokeCircle(pin.x, pin.y, 4);
+      return;
+    }
+
     this.aimGraphics.lineStyle(2, COLORS.cream, 0.82);
     this.aimGraphics.lineBetween(start.x, start.y, landing.x, landing.y);
     this.aimGraphics.lineStyle(1, COLORS.orange, 0.9);
@@ -476,7 +507,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.phase === 'power') {
-      this.selectedPower = lockPowerAt(this.meterPosition);
+      this.selectedPower = lockPowerAt(
+        this.meterPosition,
+        this.currentLie === 'green' ? 0.03 : undefined,
+      );
       this.phase = 'accuracy';
       this.instructionText.setText('STOP THE RETURN AT THE WHITE LINE');
       this.drawMeter();
@@ -496,7 +530,7 @@ export class GameScene extends Phaser.Scene {
       club: CLUBS[this.clubIndex],
       power: this.selectedPower,
       accuracyError,
-      aimDegrees: this.aimDegrees,
+      aimDegrees: this.shotAimDegrees(),
       wind: PROTOTYPE_HOLE.wind,
       startingLie: this.currentLie,
     });
@@ -518,6 +552,12 @@ export class GameScene extends Phaser.Scene {
   private launchCalculatedShot(result: ShotResult): void {
     this.flightBall.setPosition(113, 329).setVisible(true);
     const animation = { progress: 0 };
+    const startingDistanceToPin = distanceToPin(result.start);
+    const puttDistanceRatio =
+      startingDistanceToPin > 0 ? result.totalMetres / startingDistanceToPin : 1;
+    const sideViewEndX = result.club.isPutter
+      ? Phaser.Math.Clamp(Phaser.Math.Linear(113, 292, puttDistanceRatio), 113, 330)
+      : 330;
 
     this.tweens.add({
       targets: animation,
@@ -527,8 +567,10 @@ export class GameScene extends Phaser.Scene {
       onUpdate: () => {
         const sample = sampleTrajectory(result, animation.progress);
         const mapPosition = worldToMap(sample);
-        const sideViewX = Phaser.Math.Linear(113, 330, animation.progress);
-        const sideViewY = 329 - Math.min(86, sample.height * 2.25);
+        const sideViewX = Phaser.Math.Linear(113, sideViewEndX, animation.progress);
+        const sideViewY = result.club.isPutter
+          ? 329
+          : 329 - Math.min(86, sample.height * 2.25);
 
         this.mapBall.setPosition(mapPosition.x, mapPosition.y);
         this.flightBall.setPosition(sideViewX, sideViewY);
@@ -546,7 +588,18 @@ export class GameScene extends Phaser.Scene {
     this.currentLie = result.penalty ? result.startingLie : result.finalLie;
     const resolvedMapPosition = worldToMap(this.ballPosition);
     this.mapBall.setPosition(resolvedMapPosition.x, resolvedMapPosition.y);
-    this.distanceText.setText(`${Math.round(distanceToPin(this.ballPosition))} M LEFT`);
+    this.distanceText.setText(result.holed ? 'IN THE CUP' : this.distanceLabel(this.ballPosition));
+
+    if (result.holed) {
+      this.currentLie = 'green';
+      this.instructionText.setText('IN THE CUP!');
+      this.meterLabel.setText('HOLED');
+      this.aimGraphics.clear();
+      this.time.delayedCall(1350, () => {
+        this.scene.start(SCENES.result, { strokes: this.strokeCount });
+      });
+      return;
+    }
 
     if (result.penalty) {
       const penaltyLabel = lieLabel(result.finalLie);
@@ -557,7 +610,7 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
-    this.aimDegrees = this.directAimToPin();
+    this.aimDegrees = this.currentLie === 'green' ? 0 : this.directAimToPin();
     this.time.delayedCall(1650, () => {
       this.phase = 'setup';
       this.refreshSetupDisplay();
@@ -565,10 +618,58 @@ export class GameScene extends Phaser.Scene {
   }
 
   private directAimToPin(): number {
+    return Phaser.Math.Clamp(this.bearingToPin(), -30, 30);
+  }
+
+  private bearingToPin(): number {
     const lateral = PIN_POSITION.x - this.ballPosition.x;
     const forward = PIN_POSITION.y - this.ballPosition.y;
-    const directDegrees = (Math.atan2(lateral, forward) * 180) / Math.PI;
-    return Phaser.Math.Clamp(directDegrees, -30, 30);
+    return (Math.atan2(lateral, forward) * 180) / Math.PI;
+  }
+
+  private shotAimDegrees(): number {
+    return this.currentLie === 'green'
+      ? this.bearingToPin() + this.aimDegrees
+      : this.aimDegrees;
+  }
+
+  private meterDelta(delta: number): number {
+    return this.currentLie === 'green' ? delta * 0.68 : delta;
+  }
+
+  private distanceLabel(position: WorldPosition): string {
+    const distance = distanceToPin(position);
+    return `${distance < 10 ? distance.toFixed(1) : Math.round(distance)} M LEFT`;
+  }
+
+  private drawPuttingView(): void {
+    this.puttingGraphics.clear();
+    const isPutting = this.currentLie === 'green';
+    this.puttingLabel.setVisible(isPutting);
+
+    if (!isPutting) {
+      return;
+    }
+
+    this.puttingGraphics.fillStyle(COLORS.green, 1);
+    this.puttingGraphics.fillRoundedRect(9, 202, 334, 149, 5);
+    this.puttingGraphics.fillStyle(COLORS.fairwayLight, 0.52);
+    this.puttingGraphics.fillEllipse(289, 320, 98, 24);
+
+    this.puttingGraphics.lineStyle(1, COLORS.cream, 0.28);
+    for (const y of [239, 267, 294, 320, 343]) {
+      this.puttingGraphics.lineBetween(10, y, 342, y);
+    }
+    for (const x of [24, 71, 118, 165, 212, 259, 306, 339]) {
+      this.puttingGraphics.lineBetween(x, 351, 289, 222);
+    }
+
+    this.puttingGraphics.fillStyle(COLORS.black, 1);
+    this.puttingGraphics.fillEllipse(292, 329, 13, 5);
+    this.puttingGraphics.lineStyle(2, COLORS.cream, 1);
+    this.puttingGraphics.lineBetween(292, 328, 292, 230);
+    this.puttingGraphics.fillStyle(COLORS.orange, 1);
+    this.puttingGraphics.fillTriangle(292, 230, 326, 241, 292, 251);
   }
 
   private drawGolfer(): void {

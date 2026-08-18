@@ -1,10 +1,12 @@
 import { LIE_TUNING, type ClubDefinition, type Lie } from '../data';
 import {
+  PIN_POSITION,
   distanceBetween,
   getLieAt,
   isPenaltyLie,
   type WorldPosition,
 } from '../courseModel';
+import { evaluateCupCapture } from '../cupCapture';
 
 export interface WindDefinition {
   speed: number;
@@ -39,6 +41,7 @@ export interface ShotResult {
   peakHeightMetres: number;
   animationDurationMs: number;
   penalty: boolean;
+  holed: boolean;
   strokeCost: number;
   club: ClubDefinition;
 }
@@ -74,7 +77,7 @@ function addScaled(
 }
 
 export function calculateShot(input: ShotInput): ShotResult {
-  const power = clamp(input.power, 0.15, 1);
+  const power = clamp(input.power, input.club.isPutter ? 0.03 : 0.15, 1);
   const accuracyError = clamp(input.accuracyError, -1, 1);
   const lieTuning = LIE_TUNING[input.startingLie];
   const launchDirectionDegrees =
@@ -83,12 +86,21 @@ export function calculateShot(input: ShotInput): ShotResult {
   const shotDirection = directionVector(launchDirectionDegrees);
 
   if (input.club.isPutter) {
-    const rolloutMetres =
+    const plannedRolloutMetres =
       input.club.maxDistanceMetres *
-      (0.12 + power * 0.88) *
+      (0.01 + Math.pow(power, 1.55) * 0.99) *
       lieTuning.distanceMultiplier *
       lieTuning.rolloutMultiplier;
-    const visualEnd = addScaled(input.start, shotDirection, rolloutMetres, { x: 0, y: 0 }, 0);
+    const plannedEnd = addScaled(
+      input.start,
+      shotDirection,
+      plannedRolloutMetres,
+      { x: 0, y: 0 },
+      0,
+    );
+    const cupCapture = evaluateCupCapture(input.start, plannedEnd, PIN_POSITION);
+    const visualEnd = cupCapture.holed ? { ...PIN_POSITION } : plannedEnd;
+    const rolloutMetres = distanceBetween(input.start, visualEnd);
     const finalLie = getLieAt(visualEnd);
     const penalty = isPenaltyLie(finalLie);
 
@@ -110,6 +122,7 @@ export function calculateShot(input: ShotInput): ShotResult {
       peakHeightMetres: 0,
       animationDurationMs: Math.round(850 + rolloutMetres * 14),
       penalty,
+      holed: cupCapture.holed,
       strokeCost: penalty ? 2 : 1,
       club: input.club,
     };
@@ -157,6 +170,7 @@ export function calculateShot(input: ShotInput): ShotResult {
     peakHeightMetres: input.club.peakHeightMetres * (0.55 + power * 0.45),
     animationDurationMs: Math.round((flightSeconds + 0.8) * 560),
     penalty,
+    holed: false,
     strokeCost: penalty ? 2 : 1,
     club: input.club,
   };

@@ -69,7 +69,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 421, 'PROJECT 1 · CHECKPOINT 2', {
+      .text(GAME_WIDTH / 2, 421, 'PROJECT 1 · CHECKPOINT 3', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         color: '#76503a',

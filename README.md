@@ -1,6 +1,6 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 2: the deterministic shot-physics sandbox.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 3: the first completable par-4 hole.
 
 ## What works now
 
@@ -20,10 +20,14 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Live distance-to-pin and final-lie updates
 - Fairway, rough, bunker, green, water and out-of-bounds detection
 - One-stroke penalties that return the ball to its previous valid position
+- Automatic transition to a dedicated putting view on the green
+- Short-distance putter power control and line-based cup capture
+- Hole completion with strokes and score relative to par
+- Replay and return-to-title choices after completing the hole
 - Keyboard and touch controls
 - Pause, restart and return-to-title controls
 
-Putting, cup capture, hole completion and final presentation polish remain intentionally deferred.
+Final pixel artwork, character animation, audio and additional holes remain intentionally deferred.
 
 ## Run the game locally
 
@@ -74,6 +78,7 @@ The production website is generated in `dist/`. That folder is intentionally ign
 - [`docs/PROJECT_0_SPEC.md`](docs/PROJECT_0_SPEC.md) — approved product specification
 - [`docs/PROJECT_1_CHECKPOINT.md`](docs/PROJECT_1_CHECKPOINT.md) — scope and next tasks
 - [`docs/PROJECT_1_CHECKPOINT_2.md`](docs/PROJECT_1_CHECKPOINT_2.md) — physics checkpoint record
+- [`docs/PROJECT_1_CHECKPOINT_3.md`](docs/PROJECT_1_CHECKPOINT_3.md) — playable-hole checkpoint record
 
 ## Technical choices
 

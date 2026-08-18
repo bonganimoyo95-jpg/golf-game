@@ -28,8 +28,11 @@ export function advancePowerPosition(position: number, deltaMs: number): PowerAd
   };
 }
 
-export function lockPowerAt(position: number): number {
-  return clamp(position, MINIMUM_SHOT_POWER, 1);
+export function lockPowerAt(
+  position: number,
+  minimumPower: number = MINIMUM_SHOT_POWER,
+): number {
+  return clamp(position, minimumPower, 1);
 }
 
 export function returnSpeedForPower(power: number): number {

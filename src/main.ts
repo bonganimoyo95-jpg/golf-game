@@ -4,6 +4,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from './game/constants';
 import { BootScene } from './game/scenes/BootScene';
 import { GameScene } from './game/scenes/GameScene';
 import { HoleIntroScene } from './game/scenes/HoleIntroScene';
+import { ResultScene } from './game/scenes/ResultScene';
 import { TitleScene } from './game/scenes/TitleScene';
 import { COLORS } from './game/theme';
 
@@ -29,7 +30,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     activePointers: 3,
   },
-  scene: [BootScene, TitleScene, HoleIntroScene, GameScene],
+  scene: [BootScene, TitleScene, HoleIntroScene, GameScene, ResultScene],
 };
 
 new Phaser.Game(config);

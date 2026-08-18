@@ -6,4 +6,5 @@ export const SCENES = {
   title: 'TitleScene',
   holeIntro: 'HoleIntroScene',
   game: 'GameScene',
+  result: 'ResultScene',
 } as const;

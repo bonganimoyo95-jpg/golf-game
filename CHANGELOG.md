@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — First completable hole
+
+- Added a dedicated gridded putting view when the ball reaches the green.
+- Added fine short-distance putter power control while preserving the one-pass swing meter.
+- Added line-based cup capture with tolerance for controlled pace and rejection of hard overruns.
+- Added hole completion, stroke totals and score-to-par labels.
+- Added replay and return-to-title actions after finishing the hole.
+- Added automated cup-capture, putting-physics and scoring tests.
+
 ## 0.2.1 — One-pass swing meter
 
 - Replaced the semicircular placeholder with a 3/4-circle meter around the golfer.
