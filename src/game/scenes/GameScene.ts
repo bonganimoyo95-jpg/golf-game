@@ -10,7 +10,12 @@ import {
 } from '../courseModel';
 import { CLUBS, PROTOTYPE_HOLE, type Lie } from '../data';
 import { GAME_HEIGHT, GAME_WIDTH, SCENES } from '../constants';
-import { calculateShot, sampleTrajectory, type ShotResult } from '../physics/shotPhysics';
+import {
+  calculateShot,
+  putterPowerForDistance,
+  sampleTrajectory,
+  type ShotResult,
+} from '../physics/shotPhysics';
 import {
   LATE_CONTACT_LIMIT,
   accuracyErrorAt,
@@ -23,6 +28,11 @@ import { COLORS, FONT_FAMILY } from '../theme';
 import { createButton } from '../ui/createButton';
 
 type SwingPhase = 'setup' | 'power' | 'accuracy' | 'result' | 'paused';
+
+const PUTTING_BALL_SCREEN = { x: 250, y: 330 } as const;
+const PUTTING_CUP_SCREEN = { x: 250, y: 246 } as const;
+const PUTTING_HORIZON_Y = 225;
+const PUTTING_METER_SPEED_MULTIPLIER = 0.55;
 
 export class GameScene extends Phaser.Scene {
   private phase: SwingPhase = 'setup';
@@ -56,6 +66,7 @@ export class GameScene extends Phaser.Scene {
   private puttingLabel!: Phaser.GameObjects.Text;
   private mapBall!: Phaser.GameObjects.Arc;
   private flightBall!: Phaser.GameObjects.Arc;
+  private puttingBall!: Phaser.GameObjects.Arc;
   private pauseObjects: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
@@ -220,6 +231,11 @@ export class GameScene extends Phaser.Scene {
       .setStrokeStyle(1, COLORS.espresso)
       .setDepth(5)
       .setVisible(false);
+    this.puttingBall = this.add
+      .circle(PUTTING_BALL_SCREEN.x, PUTTING_BALL_SCREEN.y, 3, COLORS.white)
+      .setStrokeStyle(1, COLORS.espresso)
+      .setDepth(5)
+      .setVisible(false);
 
     this.clubText = this.add
       .text(247, 216, '', {
@@ -334,7 +350,8 @@ export class GameScene extends Phaser.Scene {
     if (this.phase !== 'setup') {
       return;
     }
-    this.aimDegrees = Phaser.Math.Clamp(this.aimDegrees + delta, -30, 30);
+    const aimStep = this.currentLie === 'green' ? delta / 3 : delta;
+    this.aimDegrees = Phaser.Math.Clamp(this.aimDegrees + aimStep, -30, 30);
     this.refreshSetupDisplay();
   }
 
@@ -550,14 +567,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private launchCalculatedShot(result: ShotResult): void {
-    this.flightBall.setPosition(113, 329).setVisible(true);
+    const puttingEnd = result.club.isPutter
+      ? this.puttingResultScreenPosition(result)
+      : undefined;
+    const sideViewStartX = result.club.isPutter ? PUTTING_BALL_SCREEN.x : 113;
+    const sideViewStartY = result.club.isPutter ? PUTTING_BALL_SCREEN.y : 329;
+
+    this.puttingBall.setVisible(false);
+    this.flightBall.setPosition(sideViewStartX, sideViewStartY).setVisible(true);
     const animation = { progress: 0 };
-    const startingDistanceToPin = distanceToPin(result.start);
-    const puttDistanceRatio =
-      startingDistanceToPin > 0 ? result.totalMetres / startingDistanceToPin : 1;
-    const sideViewEndX = result.club.isPutter
-      ? Phaser.Math.Clamp(Phaser.Math.Linear(113, 292, puttDistanceRatio), 113, 330)
-      : 330;
 
     this.tweens.add({
       targets: animation,
@@ -567,9 +585,11 @@ export class GameScene extends Phaser.Scene {
       onUpdate: () => {
         const sample = sampleTrajectory(result, animation.progress);
         const mapPosition = worldToMap(sample);
-        const sideViewX = Phaser.Math.Linear(113, sideViewEndX, animation.progress);
+        const sideViewX = result.club.isPutter
+          ? Phaser.Math.Linear(sideViewStartX, puttingEnd!.x, animation.progress)
+          : Phaser.Math.Linear(113, 330, animation.progress);
         const sideViewY = result.club.isPutter
-          ? 329
+          ? Phaser.Math.Linear(sideViewStartY, puttingEnd!.y, animation.progress)
           : 329 - Math.min(86, sample.height * 2.25);
 
         this.mapBall.setPosition(mapPosition.x, mapPosition.y);
@@ -611,6 +631,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.aimDegrees = this.currentLie === 'green' ? 0 : this.directAimToPin();
+    this.drawPuttingView();
     this.time.delayedCall(1650, () => {
       this.phase = 'setup';
       this.refreshSetupDisplay();
@@ -633,8 +654,40 @@ export class GameScene extends Phaser.Scene {
       : this.aimDegrees;
   }
 
+  private puttingResultScreenPosition(result: ShotResult): WorldPosition {
+    if (result.holed) {
+      return { ...PUTTING_CUP_SCREEN };
+    }
+
+    const distanceFromCup = distanceToPin(result.start);
+    const distanceRatio =
+      distanceFromCup > 0 ? result.totalMetres / distanceFromCup : 1;
+    const cupBearing =
+      (Math.atan2(
+        PIN_POSITION.x - result.start.x,
+        PIN_POSITION.y - result.start.y,
+      ) *
+        180) /
+      Math.PI;
+    let relativeAim = result.launchDirectionDegrees - cupBearing;
+    while (relativeAim > 180) relativeAim -= 360;
+    while (relativeAim < -180) relativeAim += 360;
+
+    const forwardPixels =
+      (PUTTING_BALL_SCREEN.y - PUTTING_CUP_SCREEN.y) *
+      Phaser.Math.Clamp(distanceRatio, 0, 1.28);
+    const lateralPixels = Math.tan((relativeAim * Math.PI) / 180) * forwardPixels;
+
+    return {
+      x: Phaser.Math.Clamp(PUTTING_BALL_SCREEN.x + lateralPixels, 164, 338),
+      y: Math.max(PUTTING_HORIZON_Y + 2, PUTTING_BALL_SCREEN.y - forwardPixels),
+    };
+  }
+
   private meterDelta(delta: number): number {
-    return this.currentLie === 'green' ? delta * 0.68 : delta;
+    return this.currentLie === 'green'
+      ? delta * PUTTING_METER_SPEED_MULTIPLIER
+      : delta;
   }
 
   private distanceLabel(position: WorldPosition): string {
@@ -646,30 +699,134 @@ export class GameScene extends Phaser.Scene {
     this.puttingGraphics.clear();
     const isPutting = this.currentLie === 'green';
     this.puttingLabel.setVisible(isPutting);
+    this.golferGraphics.setVisible(!isPutting);
+    this.puttingBall.setVisible(isPutting);
 
     if (!isPutting) {
+      this.clubText.setVisible(true).setPosition(247, 216);
+      this.lieText.setVisible(true).setPosition(178, 270).setOrigin(0, 0);
+      this.aimText
+        .setVisible(true)
+        .setPosition(178, 286)
+        .setOrigin(0, 0)
+        .setText(`AIM ${this.aimDegrees > 0 ? '+' : ''}${Math.round(this.aimDegrees)}°`);
+      this.instructionText.setPosition(250, 341);
+      this.meterLabel.setPosition(250, 316);
       return;
     }
 
+    const distance = distanceToPin(this.ballPosition);
+    const targetPower = putterPowerForDistance(CLUBS[3], distance, 'green');
+
+    this.clubText.setVisible(false);
+    this.lieText.setVisible(false);
+    this.aimText
+      .setVisible(true)
+      .setPosition(250, 217)
+      .setOrigin(0.5, 0)
+      .setText(`LINE ${this.aimDegrees > 0 ? '+' : ''}${Math.round(this.aimDegrees)}°`);
+    this.instructionText.setPosition(250, 343);
+    this.meterLabel.setPosition(92, 344);
+    this.puttingLabel
+      .setPosition(250, 205)
+      .setText(`PUTT ${distance.toFixed(1)} M · TARGET ${Math.round(targetPower * 100)}%`);
+
     this.puttingGraphics.fillStyle(COLORS.green, 1);
     this.puttingGraphics.fillRoundedRect(9, 202, 334, 149, 5);
-    this.puttingGraphics.fillStyle(COLORS.fairwayLight, 0.52);
-    this.puttingGraphics.fillEllipse(289, 320, 98, 24);
+    this.puttingGraphics.fillStyle(COLORS.rough, 1);
+    this.puttingGraphics.fillRect(10, 225, 332, 15);
+    this.puttingGraphics.fillStyle(COLORS.fairwayLight, 0.18);
+    this.puttingGraphics.fillTriangle(
+      PUTTING_CUP_SCREEN.x,
+      PUTTING_HORIZON_Y,
+      132,
+      350,
+      342,
+      350,
+    );
 
     this.puttingGraphics.lineStyle(1, COLORS.cream, 0.28);
-    for (const y of [239, 267, 294, 320, 343]) {
-      this.puttingGraphics.lineBetween(10, y, 342, y);
+    for (const progress of [0.18, 0.34, 0.52, 0.7, 0.86, 1]) {
+      const y = Phaser.Math.Linear(
+        PUTTING_HORIZON_Y,
+        PUTTING_BALL_SCREEN.y + 17,
+        progress,
+      );
+      const left = Phaser.Math.Linear(PUTTING_CUP_SCREEN.x, 10, progress);
+      const right = Phaser.Math.Linear(PUTTING_CUP_SCREEN.x, 342, progress);
+      this.puttingGraphics.lineBetween(left, y, right, y);
     }
-    for (const x of [24, 71, 118, 165, 212, 259, 306, 339]) {
-      this.puttingGraphics.lineBetween(x, 351, 289, 222);
+    for (const x of [12, 58, 104, 150, 196, 242, 288, 334]) {
+      this.puttingGraphics.lineBetween(
+        x,
+        350,
+        PUTTING_CUP_SCREEN.x,
+        PUTTING_HORIZON_Y,
+      );
     }
 
+    const aimForwardPixels = PUTTING_BALL_SCREEN.y - PUTTING_CUP_SCREEN.y;
+    const aimEndX =
+      PUTTING_BALL_SCREEN.x +
+      Math.tan((this.aimDegrees * Math.PI) / 180) * aimForwardPixels;
+    this.puttingGraphics.lineStyle(5, COLORS.espresso, 0.32);
+    this.puttingGraphics.lineBetween(
+      PUTTING_BALL_SCREEN.x,
+      PUTTING_BALL_SCREEN.y,
+      aimEndX,
+      PUTTING_CUP_SCREEN.y,
+    );
+    this.puttingGraphics.lineStyle(2, COLORS.cream, 0.92);
+    this.puttingGraphics.lineBetween(
+      PUTTING_BALL_SCREEN.x,
+      PUTTING_BALL_SCREEN.y,
+      aimEndX,
+      PUTTING_CUP_SCREEN.y,
+    );
+    this.puttingGraphics.lineStyle(2, COLORS.orange, 1);
+    this.puttingGraphics.strokeCircle(aimEndX, PUTTING_CUP_SCREEN.y, 6);
+
     this.puttingGraphics.fillStyle(COLORS.black, 1);
-    this.puttingGraphics.fillEllipse(292, 329, 13, 5);
+    this.puttingGraphics.fillEllipse(
+      PUTTING_CUP_SCREEN.x,
+      PUTTING_CUP_SCREEN.y,
+      13,
+      5,
+    );
     this.puttingGraphics.lineStyle(2, COLORS.cream, 1);
-    this.puttingGraphics.lineBetween(292, 328, 292, 230);
+    this.puttingGraphics.lineBetween(
+      PUTTING_CUP_SCREEN.x,
+      PUTTING_CUP_SCREEN.y,
+      PUTTING_CUP_SCREEN.x,
+      PUTTING_HORIZON_Y - 10,
+    );
     this.puttingGraphics.fillStyle(COLORS.orange, 1);
-    this.puttingGraphics.fillTriangle(292, 230, 326, 241, 292, 251);
+    this.puttingGraphics.fillTriangle(
+      PUTTING_CUP_SCREEN.x,
+      PUTTING_HORIZON_Y - 10,
+      PUTTING_CUP_SCREEN.x + 27,
+      PUTTING_HORIZON_Y - 2,
+      PUTTING_CUP_SCREEN.x,
+      PUTTING_HORIZON_Y + 7,
+    );
+
+    this.puttingGraphics.fillStyle(COLORS.espresso, 0.28);
+    this.puttingGraphics.fillEllipse(222, 334, 43, 10);
+    this.puttingGraphics.fillStyle(COLORS.tobacco, 1);
+    this.puttingGraphics.fillCircle(222, 274, 11);
+    this.puttingGraphics.fillStyle(COLORS.orange, 1);
+    this.puttingGraphics.fillRect(209, 270, 26, 6);
+    this.puttingGraphics.fillRect(207, 286, 31, 33);
+    this.puttingGraphics.fillStyle(COLORS.espresso, 1);
+    this.puttingGraphics.fillRect(210, 316, 10, 25);
+    this.puttingGraphics.fillRect(226, 316, 10, 25);
+    this.puttingGraphics.lineStyle(4, COLORS.tobacco, 1);
+    this.puttingGraphics.lineBetween(232, 293, 241, 310);
+    this.puttingGraphics.lineBetween(241, 310, 247, 326);
+    this.puttingGraphics.lineStyle(2, COLORS.cream, 1);
+    this.puttingGraphics.lineBetween(247, 326, 251, 331);
+    this.puttingGraphics.lineStyle(3, COLORS.espresso, 1);
+    this.puttingGraphics.lineBetween(247, 331, 256, 331);
   }
 
   private drawGolfer(): void {

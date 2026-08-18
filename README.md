@@ -1,6 +1,6 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 3: the first completable par-4 hole.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 4: a clearer and more forgiving putting experience.
 
 ## What works now
 
@@ -21,13 +21,17 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Fairway, rough, bunker, green, water and out-of-bounds detection
 - One-stroke penalties that return the ball to its previous valid position
 - Automatic transition to a dedicated putting view on the green
+- Over-the-shoulder putting camera aligned with the ball-to-cup line
+- Perspective green grid, centred cup and visible adjustable aim line
+- One-degree putting aim adjustments and recommended target power
+- Slower putting-meter timing and beginner-friendly cup capture
 - Short-distance putter power control and line-based cup capture
 - Hole completion with strokes and score relative to par
 - Replay and return-to-title choices after completing the hole
 - Keyboard and touch controls
 - Pause, restart and return-to-title controls
 
-Final pixel artwork, character animation, audio and additional holes remain intentionally deferred.
+Final pixel artwork, full character animation, audio and additional holes remain intentionally deferred.
 
 ## Run the game locally
 
@@ -79,6 +83,7 @@ The production website is generated in `dist/`. That folder is intentionally ign
 - [`docs/PROJECT_1_CHECKPOINT.md`](docs/PROJECT_1_CHECKPOINT.md) — scope and next tasks
 - [`docs/PROJECT_1_CHECKPOINT_2.md`](docs/PROJECT_1_CHECKPOINT_2.md) — physics checkpoint record
 - [`docs/PROJECT_1_CHECKPOINT_3.md`](docs/PROJECT_1_CHECKPOINT_3.md) — playable-hole checkpoint record
+- [`docs/PROJECT_1_CHECKPOINT_4.md`](docs/PROJECT_1_CHECKPOINT_4.md) — putting-camera checkpoint record
 
 ## Technical choices
 

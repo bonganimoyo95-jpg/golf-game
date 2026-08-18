@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { CLUBS, PROTOTYPE_HOLE } from '../data';
 import { TEE_POSITION } from '../courseModel';
-import { calculateShot, sampleTrajectory, type ShotInput } from './shotPhysics';
+import {
+  calculateShot,
+  putterPowerForDistance,
+  putterRolloutForPower,
+  sampleTrajectory,
+  type ShotInput,
+} from './shotPhysics';
 
 const baseInput: ShotInput = {
   start: TEE_POSITION,
@@ -66,6 +72,13 @@ describe('shot physics', () => {
 
     expect(putt.holed).toBe(true);
     expect(putt.resolvedEnd).toEqual({ x: 0, y: PROTOTYPE_HOLE.distanceMetres });
+  });
+
+  it('recommends putter power that reaches the requested distance', () => {
+    const power = putterPowerForDistance(CLUBS[3], 10, 'green');
+    const distance = putterRolloutForPower(CLUBS[3], power, 'green');
+
+    expect(distance).toBeCloseTo(10, 5);
   });
 
   it('lets an overpowered putt run past the cup', () => {

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 — Putting camera and readability
+
+- Rebuilt the green view as an over-the-shoulder camera aligned behind the ball and golfer.
+- Added a perspective grid, centred cup, flag and live ball-to-target aim line.
+- Added on-screen target-power guidance based on the actual remaining distance.
+- Changed green aiming from three-degree to one-degree adjustments.
+- Slowed the putting meter further to improve timing readability.
+- Increased controlled-pace cup capture tolerance while preserving hard overruns.
+- Added tested putter-distance and recommended-power helpers.
+
 ## 0.3.0 — First completable hole
 
 - Added a dedicated gridded putting view when the ball reaches the green.

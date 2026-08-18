@@ -1,7 +1,7 @@
 import { distanceBetween, type WorldPosition } from './courseModel';
 
-export const CUP_CAPTURE_RADIUS_METRES = 0.34;
-export const MAX_CAPTURE_OVERRUN_METRES = 1.2;
+export const CUP_CAPTURE_RADIUS_METRES = 0.48;
+export const MAX_CAPTURE_OVERRUN_METRES = 1.8;
 
 export interface CupCaptureResult {
   holed: boolean;

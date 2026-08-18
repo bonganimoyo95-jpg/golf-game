@@ -55,6 +55,45 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));
 }
 
+const PUTT_STARTING_DISTANCE_SHARE = 0.01;
+const PUTT_POWER_DISTANCE_SHARE = 0.99;
+const PUTT_POWER_EXPONENT = 1.55;
+
+export function putterRolloutForPower(
+  club: ClubDefinition,
+  powerValue: number,
+  startingLie: Lie,
+): number {
+  const power = clamp(powerValue, 0.03, 1);
+  const lieTuning = LIE_TUNING[startingLie];
+  return (
+    club.maxDistanceMetres *
+    (PUTT_STARTING_DISTANCE_SHARE +
+      Math.pow(power, PUTT_POWER_EXPONENT) * PUTT_POWER_DISTANCE_SHARE) *
+    lieTuning.distanceMultiplier *
+    lieTuning.rolloutMultiplier
+  );
+}
+
+export function putterPowerForDistance(
+  club: ClubDefinition,
+  distanceMetres: number,
+  startingLie: Lie,
+): number {
+  const lieTuning = LIE_TUNING[startingLie];
+  const maximumDistance =
+    club.maxDistanceMetres *
+    lieTuning.distanceMultiplier *
+    lieTuning.rolloutMultiplier;
+  const distanceShare = clamp(distanceMetres / Math.max(maximumDistance, 0.01), 0, 1);
+  const poweredShare = clamp(
+    (distanceShare - PUTT_STARTING_DISTANCE_SHARE) / PUTT_POWER_DISTANCE_SHARE,
+    0,
+    1,
+  );
+  return clamp(Math.pow(poweredShare, 1 / PUTT_POWER_EXPONENT), 0.03, 1);
+}
+
 function directionVector(degrees: number): WorldPosition {
   const radians = (degrees * Math.PI) / 180;
   return {
@@ -86,11 +125,11 @@ export function calculateShot(input: ShotInput): ShotResult {
   const shotDirection = directionVector(launchDirectionDegrees);
 
   if (input.club.isPutter) {
-    const plannedRolloutMetres =
-      input.club.maxDistanceMetres *
-      (0.01 + Math.pow(power, 1.55) * 0.99) *
-      lieTuning.distanceMultiplier *
-      lieTuning.rolloutMultiplier;
+    const plannedRolloutMetres = putterRolloutForPower(
+      input.club,
+      power,
+      input.startingLie,
+    );
     const plannedEnd = addScaled(
       input.start,
       shotDirection,
