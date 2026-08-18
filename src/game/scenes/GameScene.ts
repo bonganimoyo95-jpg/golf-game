@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ASSETS } from '../assets';
 import { drawCourseMapBase, drawLandscape } from '../courseArt';
 import {
   PIN_POSITION,
@@ -62,7 +63,7 @@ export class GameScene extends Phaser.Scene {
   private aimGraphics!: Phaser.GameObjects.Graphics;
   private meterGraphics!: Phaser.GameObjects.Graphics;
   private puttingGraphics!: Phaser.GameObjects.Graphics;
-  private golferGraphics!: Phaser.GameObjects.Graphics;
+  private golferSprite!: Phaser.GameObjects.Image;
   private puttingLabel!: Phaser.GameObjects.Text;
   private mapBall!: Phaser.GameObjects.Arc;
   private flightBall!: Phaser.GameObjects.Arc;
@@ -563,7 +564,33 @@ export class GameScene extends Phaser.Scene {
           : 'LATE CONTACT!',
     );
     this.aimGraphics.clear();
-    this.launchCalculatedShot(result);
+    this.playGolferSwing(result);
+  }
+
+  private playGolferSwing(result: ShotResult): void {
+    if (result.club.isPutter) {
+      this.golferSprite.setTexture(ASSETS.golferPuttAddress);
+      this.time.delayedCall(90, () => {
+        this.golferSprite.setTexture(ASSETS.golferPuttStroke);
+      });
+      this.time.delayedCall(190, () => {
+        this.launchCalculatedShot(result);
+        this.golferSprite.setTexture(ASSETS.golferPuttAddress);
+      });
+      return;
+    }
+
+    this.golferSprite.setTexture(ASSETS.golferBackswing);
+    this.time.delayedCall(90, () => this.golferSprite.setTexture(ASSETS.golferTop));
+    this.time.delayedCall(190, () => this.golferSprite.setTexture(ASSETS.golferDownswing));
+    this.time.delayedCall(270, () => {
+      this.golferSprite.setTexture(ASSETS.golferImpact);
+      this.launchCalculatedShot(result);
+    });
+    this.time.delayedCall(380, () =>
+      this.golferSprite.setTexture(ASSETS.golferFollowThrough),
+    );
+    this.time.delayedCall(560, () => this.golferSprite.setTexture(ASSETS.golferWatch));
   }
 
   private launchCalculatedShot(result: ShotResult): void {
@@ -615,6 +642,11 @@ export class GameScene extends Phaser.Scene {
       this.instructionText.setText('IN THE CUP!');
       this.meterLabel.setText('HOLED');
       this.aimGraphics.clear();
+      this.golferSprite
+        .setTexture(ASSETS.golferCelebrate)
+        .setPosition(206, 347)
+        .setDisplaySize(80, 114)
+        .setVisible(true);
       this.time.delayedCall(1350, () => {
         this.scene.start(SCENES.result, { strokes: this.strokeCount });
       });
@@ -624,6 +656,10 @@ export class GameScene extends Phaser.Scene {
     if (result.penalty) {
       const penaltyLabel = lieLabel(result.finalLie);
       this.instructionText.setText(`${penaltyLabel} · +1 PENALTY · BALL RETURNED`);
+      this.golferSprite
+        .setTexture(ASSETS.golferDisappointed)
+        .setPosition(88, 347)
+        .setDisplaySize(96, 137);
     } else {
       this.instructionText.setText(
         `${Math.round(result.carryMetres)} CARRY + ${Math.round(result.rolloutMetres)} ROLL = ${Math.round(result.totalMetres)} M · ${lieLabel(result.finalLie)}`,
@@ -631,7 +667,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.aimDegrees = this.currentLie === 'green' ? 0 : this.directAimToPin();
-    this.drawPuttingView();
+    this.puttingBall.setVisible(this.currentLie === 'green' && result.club.isPutter);
     this.time.delayedCall(1650, () => {
       this.phase = 'setup';
       this.refreshSetupDisplay();
@@ -699,10 +735,14 @@ export class GameScene extends Phaser.Scene {
     this.puttingGraphics.clear();
     const isPutting = this.currentLie === 'green';
     this.puttingLabel.setVisible(isPutting);
-    this.golferGraphics.setVisible(!isPutting);
     this.puttingBall.setVisible(isPutting);
 
     if (!isPutting) {
+      this.golferSprite
+        .setVisible(true)
+        .setTexture(ASSETS.golferAddress)
+        .setPosition(88, 347)
+        .setDisplaySize(96, 137);
       this.clubText.setVisible(true).setPosition(247, 216);
       this.lieText.setVisible(true).setPosition(178, 270).setOrigin(0, 0);
       this.aimText
@@ -730,11 +770,18 @@ export class GameScene extends Phaser.Scene {
     this.puttingLabel
       .setPosition(250, 205)
       .setText(`PUTT ${distance.toFixed(1)} M · TARGET ${Math.round(targetPower * 100)}%`);
+    this.golferSprite
+      .setVisible(true)
+      .setTexture(ASSETS.golferPuttAddress)
+      .setPosition(206, 347)
+      .setDisplaySize(80, 114);
 
-    this.puttingGraphics.fillStyle(COLORS.green, 1);
+    this.puttingGraphics.fillStyle(COLORS.espresso, 0.14);
     this.puttingGraphics.fillRoundedRect(9, 202, 334, 149, 5);
-    this.puttingGraphics.fillStyle(COLORS.rough, 1);
+    this.puttingGraphics.fillStyle(COLORS.rough, 0.92);
     this.puttingGraphics.fillRect(10, 225, 332, 15);
+    this.puttingGraphics.fillStyle(COLORS.green, 1);
+    this.puttingGraphics.fillRect(10, 240, 332, 111);
     this.puttingGraphics.fillStyle(COLORS.fairwayLight, 0.18);
     this.puttingGraphics.fillTriangle(
       PUTTING_CUP_SCREEN.x,
@@ -744,6 +791,8 @@ export class GameScene extends Phaser.Scene {
       342,
       350,
     );
+    this.puttingGraphics.fillStyle(COLORS.cream, 0.86);
+    this.puttingGraphics.fillRoundedRect(164, 202, 174, 30, 3);
 
     this.puttingGraphics.lineStyle(1, COLORS.cream, 0.28);
     for (const progress of [0.18, 0.34, 0.52, 0.7, 0.86, 1]) {
@@ -798,52 +847,26 @@ export class GameScene extends Phaser.Scene {
       PUTTING_CUP_SCREEN.x,
       PUTTING_CUP_SCREEN.y,
       PUTTING_CUP_SCREEN.x,
-      PUTTING_HORIZON_Y - 10,
+      PUTTING_HORIZON_Y + 6,
     );
     this.puttingGraphics.fillStyle(COLORS.orange, 1);
     this.puttingGraphics.fillTriangle(
       PUTTING_CUP_SCREEN.x,
-      PUTTING_HORIZON_Y - 10,
+      PUTTING_HORIZON_Y + 6,
       PUTTING_CUP_SCREEN.x + 27,
-      PUTTING_HORIZON_Y - 2,
+      PUTTING_HORIZON_Y + 13,
       PUTTING_CUP_SCREEN.x,
-      PUTTING_HORIZON_Y + 7,
+      PUTTING_HORIZON_Y + 20,
     );
 
-    this.puttingGraphics.fillStyle(COLORS.espresso, 0.28);
-    this.puttingGraphics.fillEllipse(222, 334, 43, 10);
-    this.puttingGraphics.fillStyle(COLORS.tobacco, 1);
-    this.puttingGraphics.fillCircle(222, 274, 11);
-    this.puttingGraphics.fillStyle(COLORS.orange, 1);
-    this.puttingGraphics.fillRect(209, 270, 26, 6);
-    this.puttingGraphics.fillRect(207, 286, 31, 33);
-    this.puttingGraphics.fillStyle(COLORS.espresso, 1);
-    this.puttingGraphics.fillRect(210, 316, 10, 25);
-    this.puttingGraphics.fillRect(226, 316, 10, 25);
-    this.puttingGraphics.lineStyle(4, COLORS.tobacco, 1);
-    this.puttingGraphics.lineBetween(232, 293, 241, 310);
-    this.puttingGraphics.lineBetween(241, 310, 247, 326);
-    this.puttingGraphics.lineStyle(2, COLORS.cream, 1);
-    this.puttingGraphics.lineBetween(247, 326, 251, 331);
-    this.puttingGraphics.lineStyle(3, COLORS.espresso, 1);
-    this.puttingGraphics.lineBetween(247, 331, 256, 331);
   }
 
   private drawGolfer(): void {
-    this.golferGraphics = this.add.graphics().setDepth(4);
-    this.golferGraphics.fillStyle(COLORS.tobacco, 1);
-    this.golferGraphics.fillCircle(82, 258, 11);
-    this.golferGraphics.fillStyle(COLORS.orange, 1);
-    this.golferGraphics.fillRect(70, 255, 22, 5);
-    this.golferGraphics.fillRect(72, 271, 21, 35);
-    this.golferGraphics.fillStyle(COLORS.espresso, 1);
-    this.golferGraphics.fillRect(71, 302, 8, 28);
-    this.golferGraphics.fillRect(86, 302, 8, 28);
-    this.golferGraphics.lineStyle(3, COLORS.espresso, 1);
-    this.golferGraphics.lineBetween(92, 278, 111, 296);
-    this.golferGraphics.lineBetween(111, 296, 116, 327);
-    this.golferGraphics.fillStyle(COLORS.white, 1);
-    this.golferGraphics.fillCircle(113, 329, 3);
+    this.golferSprite = this.add
+      .image(88, 347, ASSETS.golferAddress)
+      .setOrigin(0.5, 1)
+      .setDisplaySize(96, 137)
+      .setDepth(4);
   }
 
   private togglePause(): void {

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ASSETS } from '../assets';
 import { GAME_WIDTH, SCENES } from '../constants';
 import { PROTOTYPE_HOLE } from '../data';
 import { scoreHole } from '../scoring';
@@ -28,7 +29,13 @@ export class ResultScene extends Phaser.Scene {
     this.drawBackdrop();
 
     this.add
-      .text(GAME_WIDTH / 2, 50, 'HOLE COMPLETE', {
+      .image(91, 281, ASSETS.golferCelebrate)
+      .setOrigin(0.5, 1)
+      .setDisplaySize(108, 154)
+      .setDepth(2);
+
+    this.add
+      .text(GAME_WIDTH / 2, 42, 'HOLE COMPLETE', {
         fontFamily: FONT_FAMILY,
         fontSize: '24px',
         fontStyle: 'bold',
@@ -37,7 +44,7 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 82, `HOLE ${PROTOTYPE_HOLE.number} · PAR ${PROTOTYPE_HOLE.par}`, {
+      .text(GAME_WIDTH / 2, 73, `HOLE ${PROTOTYPE_HOLE.number} · PAR ${PROTOTYPE_HOLE.par}`, {
         fontFamily: FONT_FAMILY,
         fontSize: '11px',
         color: '#d8a43e',
@@ -45,7 +52,7 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 172, `${this.strokes}`, {
+      .text(245, 164, `${this.strokes}`, {
         fontFamily: FONT_FAMILY,
         fontSize: '64px',
         fontStyle: 'bold',
@@ -54,7 +61,7 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 216, 'STROKES', {
+      .text(245, 207, 'STROKES', {
         fontFamily: FONT_FAMILY,
         fontSize: '11px',
         fontStyle: 'bold',
@@ -63,7 +70,7 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 263, `${score.label}  ·  ${score.display}`, {
+      .text(245, 247, `${score.label}  ·  ${score.display}`, {
         fontFamily: FONT_FAMILY,
         fontSize: '19px',
         fontStyle: 'bold',
@@ -96,24 +103,20 @@ export class ResultScene extends Phaser.Scene {
   }
 
   private drawBackdrop(): void {
+    this.add
+      .image(0, 0, ASSETS.coursePanorama)
+      .setOrigin(0)
+      .setDisplaySize(GAME_WIDTH, 180);
+
     const graphics = this.add.graphics();
+    graphics.fillStyle(COLORS.espresso, 0.58);
+    graphics.fillRect(0, 0, GAME_WIDTH, 180);
     graphics.fillStyle(COLORS.tobacco, 1);
-    graphics.fillRoundedRect(22, 111, GAME_WIDTH - 44, 176, 12);
-    graphics.fillStyle(COLORS.green, 1);
-    graphics.fillEllipse(GAME_WIDTH / 2, 182, 208, 138);
-    graphics.fillStyle(COLORS.black, 1);
-    graphics.fillEllipse(GAME_WIDTH / 2, 219, 30, 10);
-    graphics.lineStyle(4, COLORS.cream, 1);
-    graphics.lineBetween(GAME_WIDTH / 2, 205, GAME_WIDTH / 2, 126);
-    graphics.fillStyle(COLORS.orange, 1);
-    graphics.fillTriangle(
-      GAME_WIDTH / 2,
-      126,
-      GAME_WIDTH / 2 + 46,
-      141,
-      GAME_WIDTH / 2,
-      155,
-    );
+    graphics.fillRoundedRect(18, 104, GAME_WIDTH - 36, 184, 12);
+    graphics.lineStyle(2, COLORS.cream, 0.72);
+    graphics.strokeRoundedRect(18, 104, GAME_WIDTH - 36, 184, 12);
+    graphics.lineStyle(1, COLORS.marigold, 0.7);
+    graphics.lineBetween(165, 126, 165, 270);
   }
 
   private playAgain(): void {

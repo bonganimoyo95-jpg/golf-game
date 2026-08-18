@@ -1,11 +1,15 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 4: a clearer and more forgiving putting experience.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 5: the first cohesive STICK pixel-art presentation.
 
 ## What works now
 
 - Responsive 352 × 440 Phaser canvas
-- Fairways & Friends placeholder visual system
+- Original STICK golfer with a red-and-black championship visual direction
+- Twelve consistent golfer poses covering setup, swing, putting and reactions
+- Animated backswing, downswing, impact and follow-through sequence
+- Original Pacific Northwest pixel-art course panorama and overhead hole map
+- Updated title and score screens using the new golfer and course artwork
 - Title screen and hole-introduction screen
 - Split overhead-map and golfer-view game screen
 - Four configurable clubs
@@ -31,7 +35,7 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Keyboard and touch controls
 - Pause, restart and return-to-title controls
 
-Final pixel artwork, full character animation, audio and additional holes remain intentionally deferred.
+Audio, additional holes, advanced shot types and final effects polish remain intentionally deferred.
 
 ## Run the game locally
 
@@ -84,6 +88,7 @@ The production website is generated in `dist/`. That folder is intentionally ign
 - [`docs/PROJECT_1_CHECKPOINT_2.md`](docs/PROJECT_1_CHECKPOINT_2.md) — physics checkpoint record
 - [`docs/PROJECT_1_CHECKPOINT_3.md`](docs/PROJECT_1_CHECKPOINT_3.md) — playable-hole checkpoint record
 - [`docs/PROJECT_1_CHECKPOINT_4.md`](docs/PROJECT_1_CHECKPOINT_4.md) — putting-camera checkpoint record
+- [`docs/PROJECT_1_CHECKPOINT_5.md`](docs/PROJECT_1_CHECKPOINT_5.md) — pixel-art checkpoint record
 
 ## Technical choices
 

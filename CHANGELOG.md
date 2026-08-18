@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 — STICK pixel-art presentation
+
+- Replaced the geometric golfer with an original fictional STICK character in a red-and-black championship palette.
+- Added twelve consistent golfer poses for full swings, putting, celebration and disappointment.
+- Connected backswing, downswing, impact, follow-through and ball-watching frames to shot timing.
+- Added distinct putting-stroke animation and a hole-completion celebration.
+- Replaced the flat landscape with an original Pacific Northwest pixel-art course panorama.
+- Replaced the geometric overhead layout with a detailed pixel-art hole map.
+- Updated the title, putting and result-screen compositions around the new artwork.
+
 ## 0.4.0 — Putting camera and readability
 
 - Rebuilt the green view as an over-the-shoulder camera aligned behind the ball and golfer.

@@ -1,0 +1,33 @@
+export const ASSETS = {
+  courseMap: 'course-map',
+  coursePanorama: 'course-panorama',
+  golferIdle: 'golfer-idle',
+  golferAddress: 'golfer-address',
+  golferBackswing: 'golfer-backswing',
+  golferTop: 'golfer-top',
+  golferDownswing: 'golfer-downswing',
+  golferImpact: 'golfer-impact',
+  golferFollowThrough: 'golfer-follow-through',
+  golferWatch: 'golfer-watch',
+  golferPuttAddress: 'golfer-putt-address',
+  golferPuttStroke: 'golfer-putt-stroke',
+  golferCelebrate: 'golfer-celebrate',
+  golferDisappointed: 'golfer-disappointed',
+} as const;
+
+export const ASSET_PATHS: ReadonlyArray<readonly [string, string]> = [
+  [ASSETS.courseMap, 'assets/course-map.png'],
+  [ASSETS.coursePanorama, 'assets/course-panorama.png'],
+  [ASSETS.golferIdle, 'assets/golfer-idle.png'],
+  [ASSETS.golferAddress, 'assets/golfer-address.png'],
+  [ASSETS.golferBackswing, 'assets/golfer-backswing.png'],
+  [ASSETS.golferTop, 'assets/golfer-top.png'],
+  [ASSETS.golferDownswing, 'assets/golfer-downswing.png'],
+  [ASSETS.golferImpact, 'assets/golfer-impact.png'],
+  [ASSETS.golferFollowThrough, 'assets/golfer-follow-through.png'],
+  [ASSETS.golferWatch, 'assets/golfer-watch.png'],
+  [ASSETS.golferPuttAddress, 'assets/golfer-putt-address.png'],
+  [ASSETS.golferPuttStroke, 'assets/golfer-putt-stroke.png'],
+  [ASSETS.golferCelebrate, 'assets/golfer-celebrate.png'],
+  [ASSETS.golferDisappointed, 'assets/golfer-disappointed.png'],
+];
