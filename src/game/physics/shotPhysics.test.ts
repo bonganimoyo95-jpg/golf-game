@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLUBS, PROTOTYPE_HOLE } from '../data';
-import { TEE_POSITION } from '../courseModel';
+import { TEE_POSITION, getLieAt } from '../courseModel';
 import {
   calculateShot,
   putterPowerForDistance,
@@ -54,11 +54,15 @@ describe('shot physics', () => {
     expect(sampleTrajectory(result, 1).phase).toBe('roll');
   });
 
-  it('adds a penalty and restores the previous position after water', () => {
+  it('adds a penalty and drops at the water entry point', () => {
     const waterShot = calculateShot({ ...baseInput, aimDegrees: -16 });
     expect(waterShot.penalty).toBe(true);
+    expect(waterShot.penaltyType).toBe('water');
     expect(waterShot.strokeCost).toBe(2);
-    expect(waterShot.resolvedEnd).toEqual(TEE_POSITION);
+    expect(waterShot.penaltyEntry).toBeDefined();
+    expect(waterShot.dropPosition).toEqual(waterShot.resolvedEnd);
+    expect(waterShot.resolvedEnd).not.toEqual(TEE_POSITION);
+    expect(getLieAt(waterShot.resolvedEnd)).not.toBe('water');
   });
 
   it('captures a controlled putt and finishes it at the pin', () => {

@@ -1,6 +1,6 @@
 export const POWER_RISE_PER_SECOND = 0.68;
-export const RETURN_BASE_PER_SECOND = 0.72;
-export const RETURN_POWER_BONUS_PER_SECOND = 0.72;
+export const RETURN_BASE_PER_SECOND = 0.6;
+export const RETURN_POWER_BONUS_PER_SECOND = 0.58;
 export const LATE_CONTACT_LIMIT = -0.5;
 export const MINIMUM_SHOT_POWER = 0.15;
 export const FULL_ACCURACY_ERROR_DISTANCE = 0.24;

@@ -3,6 +3,7 @@ import './styles.css';
 import { GAME_HEIGHT, GAME_WIDTH } from './game/constants';
 import { BootScene } from './game/scenes/BootScene';
 import { GameScene } from './game/scenes/GameScene';
+import { GolferSelectScene } from './game/scenes/GolferSelectScene';
 import { HoleIntroScene } from './game/scenes/HoleIntroScene';
 import { ResultScene } from './game/scenes/ResultScene';
 import { TitleScene } from './game/scenes/TitleScene';
@@ -30,7 +31,14 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     activePointers: 3,
   },
-  scene: [BootScene, TitleScene, HoleIntroScene, GameScene, ResultScene],
+  scene: [
+    BootScene,
+    TitleScene,
+    GolferSelectScene,
+    HoleIntroScene,
+    GameScene,
+    ResultScene,
+  ],
 };
 
 new Phaser.Game(config);

@@ -1,13 +1,16 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 5: the first cohesive STICK pixel-art presentation.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 6: the gameplay-correction release.
 
 ## What works now
 
 - Responsive 352 × 440 Phaser canvas
-- Original STICK golfer with a red-and-black championship visual direction
-- Twelve consistent golfer poses covering setup, swing, putting and reactions
-- Animated backswing, downswing, impact and follow-through sequence
+- Original white-shirt male and female pixel-art golfers
+- Pre-round male/female and right/left-handed selection
+- Mirrored play direction and meter placement for left-handed golfers
+- Shorter female club distances balanced by a 42-metre front tee
+- Twelve consistent poses per golfer covering setup, swing, putting and scoring
+- Slower, smoother backswing-to-impact sequence with a held follow-through
 - Original Pacific Northwest pixel-art course panorama and overhead hole map
 - Updated title and score screens using the new golfer and course artwork
 - Title screen and hole-introduction screen
@@ -20,13 +23,15 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Deterministic club, power, accuracy, aim, wind and lie calculations
 - Different carry, trajectory and rollout behavior for each club
 - Airborne flight, landing, bounce and rollout phases
-- Ball position retained between shots
-- Live distance-to-pin and final-lie updates
+- Ball position and next-shot origin retained after every landing
+- Directionally correct side-view flight plus world-accurate overhead flight
+- Prominent live distance-to-pin and lie display
 - Fairway, rough, bunker, green, water and out-of-bounds detection
-- One-stroke penalties that return the ball to its previous valid position
-- Automatic transition to a dedicated putting view on the green
-- Over-the-shoulder putting camera aligned with the ball-to-cup line
-- Perspective green grid, centred cup and visible adjustable aim line
+- Water penalties that drop the ball at the point of entry
+- Out-of-bounds penalties that return to the previous spot
+- Bunker-first surface classification that cannot incorrectly force the putter
+- Side-on putting view aligned with the direction of play and the cup
+- Green scenery that retains the same horizon and course environment
 - One-degree putting aim adjustments and recommended target power
 - Slower putting-meter timing and beginner-friendly cup capture
 - Short-distance putter power control and line-based cup capture
@@ -89,6 +94,7 @@ The production website is generated in `dist/`. That folder is intentionally ign
 - [`docs/PROJECT_1_CHECKPOINT_3.md`](docs/PROJECT_1_CHECKPOINT_3.md) — playable-hole checkpoint record
 - [`docs/PROJECT_1_CHECKPOINT_4.md`](docs/PROJECT_1_CHECKPOINT_4.md) — putting-camera checkpoint record
 - [`docs/PROJECT_1_CHECKPOINT_5.md`](docs/PROJECT_1_CHECKPOINT_5.md) — pixel-art checkpoint record
+- [`docs/PROJECT_1_CHECKPOINT_6.md`](docs/PROJECT_1_CHECKPOINT_6.md) — gameplay-correction record
 
 ## Technical choices
 

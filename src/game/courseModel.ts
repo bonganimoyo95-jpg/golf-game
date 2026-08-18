@@ -1,4 +1,5 @@
 import { LIE_TUNING, PROTOTYPE_HOLE, type Lie } from './data';
+import type { GolferGender } from './playerProfile';
 
 export interface WorldPosition {
   x: number;
@@ -10,7 +11,9 @@ export interface ScreenPosition {
   y: number;
 }
 
-export const TEE_POSITION: Readonly<WorldPosition> = { x: 0, y: 0 };
+export const BACK_TEE_POSITION: Readonly<WorldPosition> = { x: 0, y: 0 };
+export const FRONT_TEE_POSITION: Readonly<WorldPosition> = { x: 0, y: 42 };
+export const TEE_POSITION = BACK_TEE_POSITION;
 export const PIN_POSITION: Readonly<WorldPosition> = {
   x: 0,
   y: PROTOTYPE_HOLE.distanceMetres,
@@ -48,15 +51,17 @@ export function getLieAt(position: WorldPosition): Lie {
     return 'outOfBounds';
   }
 
-  if (insideEllipse(position, PIN_POSITION, 29, 19)) {
-    return 'green';
-  }
-
+  // The illustrated bunkers overlap the edge of the green. Hazards take
+  // precedence so a ball visibly in sand can never be assigned the putter.
   if (
-    insideEllipse(position, { x: -30, y: 346 }, 12, 8) ||
-    insideEllipse(position, { x: 30, y: 326 }, 11, 8)
+    insideEllipse(position, { x: -15, y: 377 }, 12, 16) ||
+    insideEllipse(position, { x: 17, y: 376 }, 12, 15)
   ) {
     return 'bunker';
+  }
+
+  if (insideEllipse(position, PIN_POSITION, 29, 19)) {
+    return 'green';
   }
 
   if (
@@ -66,7 +71,10 @@ export function getLieAt(position: WorldPosition): Lie {
     return 'water';
   }
 
-  if (position.y <= 15 && Math.abs(position.x) <= 16) {
+  if (
+    (position.y <= 15 && Math.abs(position.x) <= 16) ||
+    (position.y >= 34 && position.y <= 50 && Math.abs(position.x) <= 16)
+  ) {
     return 'tee';
   }
 
@@ -75,6 +83,12 @@ export function getLieAt(position: WorldPosition): Lie {
   }
 
   return 'rough';
+}
+
+export function teePositionForGender(gender: GolferGender): WorldPosition {
+  return gender === 'female'
+    ? { ...FRONT_TEE_POSITION }
+    : { ...BACK_TEE_POSITION };
 }
 
 export function distanceBetween(a: WorldPosition, b: WorldPosition): number {

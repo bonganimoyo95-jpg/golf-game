@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
-import { ASSETS } from '../assets';
+import { ASSETS, golferAsset } from '../assets';
 import { GAME_WIDTH, SCENES } from '../constants';
+import {
+  PLAYER_PROFILE_REGISTRY_KEY,
+  normalizePlayerProfile,
+} from '../playerProfile';
 import { COLORS, FONT_FAMILY } from '../theme';
 import { createButton } from '../ui/createButton';
 
@@ -12,6 +16,9 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    const profile = normalizePlayerProfile(
+      this.registry.get(PLAYER_PROFILE_REGISTRY_KEY),
+    );
     this.cameras.main.setBackgroundColor(COLORS.espresso);
     this.drawBackdrop();
 
@@ -49,9 +56,10 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .image(GAME_WIDTH / 2, 305, ASSETS.golferIdle)
+      .image(GAME_WIDTH / 2, 305, golferAsset(profile.gender, 'idle'))
       .setOrigin(0.5, 1)
       .setDisplaySize(112, 160)
+      .setFlipX(profile.handedness === 'left')
       .setDepth(2);
 
     createButton(
@@ -74,7 +82,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 421, 'PROJECT 1 · CHECKPOINT 5', {
+      .text(GAME_WIDTH / 2, 421, 'PROJECT 1 · GAMEPLAY CORRECTION', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         color: '#76503a',
@@ -91,7 +99,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private startGame(): void {
-    this.scene.start(SCENES.holeIntro);
+    this.scene.start(SCENES.golferSelect);
   }
 
   private drawBackdrop(): void {

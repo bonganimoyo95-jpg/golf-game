@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
 import { ASSET_PATHS } from '../assets';
 import { SCENES } from '../constants';
+import {
+  DEFAULT_PLAYER_PROFILE,
+  PLAYER_PROFILE_REGISTRY_KEY,
+} from '../playerProfile';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -14,6 +18,9 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (!this.registry.has(PLAYER_PROFILE_REGISTRY_KEY)) {
+      this.registry.set(PLAYER_PROFILE_REGISTRY_KEY, { ...DEFAULT_PLAYER_PROFILE });
+    }
     this.scene.start(SCENES.title);
   }
 }

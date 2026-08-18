@@ -1,8 +1,12 @@
 import Phaser from 'phaser';
-import { ASSETS } from '../assets';
+import { ASSETS, golferAsset } from '../assets';
 import { GAME_WIDTH, SCENES } from '../constants';
 import { PROTOTYPE_HOLE } from '../data';
 import { scoreHole } from '../scoring';
+import {
+  PLAYER_PROFILE_REGISTRY_KEY,
+  normalizePlayerProfile,
+} from '../playerProfile';
 import { COLORS, FONT_FAMILY } from '../theme';
 import { createButton } from '../ui/createButton';
 
@@ -25,13 +29,24 @@ export class ResultScene extends Phaser.Scene {
 
   create(): void {
     const score = scoreHole(this.strokes, PROTOTYPE_HOLE.par);
+    const profile = normalizePlayerProfile(
+      this.registry.get(PLAYER_PROFILE_REGISTRY_KEY),
+    );
     this.cameras.main.setBackgroundColor(COLORS.espresso);
     this.drawBackdrop();
 
     this.add
-      .image(91, 281, ASSETS.golferCelebrate)
+      .image(
+        91,
+        281,
+        golferAsset(
+          profile.gender,
+          score.relativeToPar < 0 ? 'celebrate' : 'neutral',
+        ),
+      )
       .setOrigin(0.5, 1)
       .setDisplaySize(108, 154)
+      .setFlipX(profile.handedness === 'left')
       .setDepth(2);
 
     this.add

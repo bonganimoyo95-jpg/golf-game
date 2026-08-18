@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.0 — Gameplay correction release
+
+- Replaced the male golfer's red shirt with a clean white shirt.
+- Added original male/female and right/left-handed selection before teeing off.
+- Added shorter female club distances and a front tee that shortens the hole by 42 metres.
+- Mirrored the golfer, ball-flight direction and shot-meter placement for left-handed play.
+- Slowed the character swing and held the follow-through through ordinary shot results.
+- Removed disappointed and ball-watching reactions from regular shots.
+- Rebuilt putting as a side-on, cup-facing view consistent with the full-shot camera.
+- Moved the polished 3/4-circle shot meter to the side opposite the golfer.
+- Made the camera recenter on the ball's new lie after every shot.
+- Added water-entry drops instead of replaying from the water or previous position.
+- Realigned greenside bunker detection with the illustrated hazards and prioritised sand over green.
+- Added a persistent, high-contrast lie badge for tee, fairway, rough, bunker and green.
+- Expanded automated coverage to 29 tests.
+
 ## 0.5.0 — STICK pixel-art presentation
 
 - Replaced the geometric golfer with an original fictional STICK character in a red-and-black championship palette.
