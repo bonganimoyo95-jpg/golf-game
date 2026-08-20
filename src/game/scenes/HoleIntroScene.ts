@@ -44,10 +44,19 @@ export class HoleIntroScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    drawCourseMapBase(this, { x: 82, y: 82, width: 188, height: 226 });
+    drawCourseMapBase(this, { x: 12, y: 82, width: 328, height: 148 });
 
     this.add
-      .text(GAME_WIDTH / 2, 325, `PAR ${PROTOTYPE_HOLE.par}  ·  ${Math.round(distanceToPin(teePosition))} M`, {
+      .text(GAME_WIDTH / 2, 241, 'TEE VIEW AND AERIAL MAP SHARE ONE HOLE', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '8px',
+        fontStyle: 'bold',
+        color: '#d8a43e',
+      })
+      .setOrigin(0.5);
+
+    this.add
+      .text(GAME_WIDTH / 2, 280, `PAR ${PROTOTYPE_HOLE.par}  ·  ${Math.round(distanceToPin(teePosition))} M`, {
         fontFamily: FONT_FAMILY,
         fontSize: '15px',
         fontStyle: 'bold',
@@ -58,7 +67,7 @@ export class HoleIntroScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        349,
+        307,
         `WIND ${PROTOTYPE_HOLE.wind.direction} ${PROTOTYPE_HOLE.wind.speed} KM/H`,
         {
           fontFamily: FONT_FAMILY,
@@ -71,7 +80,7 @@ export class HoleIntroScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        370,
+        331,
         `${profileLabel(profile)} · ${
           profile.gender === 'female' ? 'FRONT TEES' : 'BACK TEES'
         }`,
@@ -84,7 +93,7 @@ export class HoleIntroScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    createButton(this, GAME_WIDTH / 2, 410, 168, 42, 'TEE OFF', () => this.teeOff());
+    createButton(this, GAME_WIDTH / 2, 389, 168, 42, 'TEE OFF', () => this.teeOff());
 
     this.enterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.escapeKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);

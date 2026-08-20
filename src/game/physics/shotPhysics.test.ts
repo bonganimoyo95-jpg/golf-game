@@ -54,6 +54,14 @@ describe('shot physics', () => {
     expect(sampleTrajectory(result, 1).phase).toBe('roll');
   });
 
+  it('descends from a clear apex before its first bounce', () => {
+    const result = calculateShot(baseInput);
+    const apex = sampleTrajectory(result, 0.36);
+    const descent = sampleTrajectory(result, 0.64);
+    expect(apex.height).toBeGreaterThan(descent.height);
+    expect(descent.phase).toBe('flight');
+  });
+
   it('adds a penalty and drops at the water entry point', () => {
     const waterShot = calculateShot({ ...baseInput, aimDegrees: -16 });
     expect(waterShot.penalty).toBe(true);

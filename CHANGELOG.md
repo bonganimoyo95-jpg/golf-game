@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.0 — Camera, flight and identity release
+
+- Replaced both playable golfers with twelve-pose pixel-art versions of the man and woman in the supplied Fairways & Friends photo.
+- Replaced the title screen with the approved Fairways & Friends Pocket Golf cover artwork.
+- Reconciled the tee panorama with the aerial map so both depict the same fairway bend, water and greenside bunkers.
+- Added a world-position camera model that reframes the course from every new ball location.
+- Added a forward camera chase through flight, bounce and rollout, followed by a landing zoom that never snaps back to the tee.
+- Changed the airborne path to a club-sensitive asymmetric arc with a distinct descent and diminishing bounces.
+- Kept the putting cup, flag and roll path on the golfer's visible aim line for either handedness.
+- Added exact suggested putt power to the HUD and a reference marker on the swing meter.
+- Restricted the driver to tee shots and added tested lie-based club lists.
+- Expanded automated coverage to 36 tests.
+
 ## 0.6.0 — Gameplay correction release
 
 - Replaced the male golfer's red shirt with a clean white shirt.

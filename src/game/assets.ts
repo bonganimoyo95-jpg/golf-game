@@ -3,6 +3,7 @@ import type { GolferGender } from './playerProfile';
 export const ASSETS = {
   courseMap: 'course-map',
   coursePanorama: 'course-panorama',
+  titleCover: 'title-cover',
 } as const;
 
 export const GOLFER_POSES = [
@@ -38,5 +39,6 @@ const GOLFER_ASSET_PATHS: ReadonlyArray<readonly [string, string]> = (
 export const ASSET_PATHS: ReadonlyArray<readonly [string, string]> = [
   [ASSETS.courseMap, 'assets/course-map.png'],
   [ASSETS.coursePanorama, 'assets/course-panorama.png'],
+  [ASSETS.titleCover, 'assets/title-cover.png'],
   ...GOLFER_ASSET_PATHS,
 ];

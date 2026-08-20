@@ -1,17 +1,18 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 6: the gameplay-correction release.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 7: the camera, flight and identity release.
 
 ## What works now
 
 - Responsive 352 × 440 Phaser canvas
-- Original white-shirt male and female pixel-art golfers
+- Photo-derived male and female pixel-art golfers based on the Fairways & Friends hosts
+- Fairways & Friends Pocket Golf illustrated cover screen
 - Pre-round male/female and right/left-handed selection
 - Mirrored play direction and meter placement for left-handed golfers
 - Shorter female club distances balanced by a 42-metre front tee
 - Twelve consistent poses per golfer covering setup, swing, putting and scoring
 - Slower, smoother backswing-to-impact sequence with a held follow-through
-- Original Pacific Northwest pixel-art course panorama and overhead hole map
+- Matched Pacific Northwest tee panorama and overhead map depicting the same hole
 - Updated title and score screens using the new golfer and course artwork
 - Title screen and hole-introduction screen
 - Split overhead-map and golfer-view game screen
@@ -23,8 +24,9 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Deterministic club, power, accuracy, aim, wind and lie calculations
 - Different carry, trajectory and rollout behavior for each club
 - Airborne flight, landing, bounce and rollout phases
-- Ball position and next-shot origin retained after every landing
-- Directionally correct side-view flight plus world-accurate overhead flight
+- Ball position and next-shot camera origin retained after every landing
+- Forward-chasing landing camera that settles on the ball instead of returning to the tee
+- Directionally correct, asymmetric airborne arc plus bounce and rollout
 - Prominent live distance-to-pin and lie display
 - Fairway, rough, bunker, green, water and out-of-bounds detection
 - Water penalties that drop the ball at the point of entry
@@ -32,7 +34,8 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Bunker-first surface classification that cannot incorrectly force the putter
 - Side-on putting view aligned with the direction of play and the cup
 - Green scenery that retains the same horizon and course environment
-- One-degree putting aim adjustments and recommended target power
+- One-degree putting aim adjustments and a visible suggested-power marker
+- Tee-only driver selection; fairway, rough and bunker club lists follow the lie
 - Slower putting-meter timing and beginner-friendly cup capture
 - Short-distance putter power control and line-based cup capture
 - Hole completion with strokes and score relative to par
@@ -95,6 +98,7 @@ The production website is generated in `dist/`. That folder is intentionally ign
 - [`docs/PROJECT_1_CHECKPOINT_4.md`](docs/PROJECT_1_CHECKPOINT_4.md) — putting-camera checkpoint record
 - [`docs/PROJECT_1_CHECKPOINT_5.md`](docs/PROJECT_1_CHECKPOINT_5.md) — pixel-art checkpoint record
 - [`docs/PROJECT_1_CHECKPOINT_6.md`](docs/PROJECT_1_CHECKPOINT_6.md) — gameplay-correction record
+- [`docs/PROJECT_1_CHECKPOINT_7.md`](docs/PROJECT_1_CHECKPOINT_7.md) — camera, flight and identity record
 
 ## Technical choices
 

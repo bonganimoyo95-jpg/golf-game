@@ -338,21 +338,33 @@ export function sampleTrajectory(result: ShotResult, progressValue: number): Tra
     };
   }
 
-  const flightShare = 0.7;
+  const flightShare = result.club.id === 'wedge' ? 0.8 : 0.76;
   if (progress <= flightShare) {
     const flightProgress = progress / flightShare;
+    const apexProgress = clamp(
+      0.43 + result.club.loftDegrees * 0.0022,
+      0.44,
+      0.55,
+    );
+    const heightShare =
+      flightProgress <= apexProgress
+        ? Math.sin((flightProgress / apexProgress) * (Math.PI / 2))
+        : Math.cos(
+            ((flightProgress - apexProgress) / (1 - apexProgress)) *
+              (Math.PI / 2),
+          );
     return {
       x: result.start.x + (result.carryEnd.x - result.start.x) * flightProgress,
       y: result.start.y + (result.carryEnd.y - result.start.y) * flightProgress,
-      height: Math.sin(flightProgress * Math.PI) * result.peakHeightMetres,
+      height: Math.max(0, heightShare) * result.peakHeightMetres,
       phase: 'flight',
     };
   }
 
   const groundProgress = (progress - flightShare) / (1 - flightShare);
-  const bounceEnvelope = Math.max(0, 1 - groundProgress * 1.35);
+  const bounceEnvelope = Math.max(0, 1 - groundProgress * 1.5);
   const bounceHeight =
-    Math.abs(Math.sin(groundProgress * Math.PI * 3)) *
+    Math.abs(Math.sin(groundProgress * Math.PI * 2.65)) *
     result.club.bounceHeightMetres *
     bounceEnvelope;
 

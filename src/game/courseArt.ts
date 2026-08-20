@@ -38,15 +38,20 @@ export function drawCourseMapBase(
   return graphics;
 }
 
-export function drawLandscape(scene: Phaser.Scene): Phaser.GameObjects.Graphics {
-  scene.add
+export interface LandscapeView {
+  image: Phaser.GameObjects.Image;
+  frame: Phaser.GameObjects.Graphics;
+}
+
+export function drawLandscape(scene: Phaser.Scene): LandscapeView {
+  const image = scene.add
     .image(8, 201, ASSETS.coursePanorama)
     .setOrigin(0)
     .setDisplaySize(336, 151);
-  const graphics = scene.add.graphics();
+  const frame = scene.add.graphics();
 
-  graphics.lineStyle(2, COLORS.cream, 0.72);
-  graphics.strokeRoundedRect(8, 201, 336, 151, 6);
+  frame.lineStyle(2, COLORS.cream, 0.72);
+  frame.strokeRoundedRect(8, 201, 336, 151, 6);
 
-  return graphics;
+  return { image, frame };
 }

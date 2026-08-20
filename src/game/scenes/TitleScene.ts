@@ -1,10 +1,6 @@
 import Phaser from 'phaser';
-import { ASSETS, golferAsset } from '../assets';
+import { ASSETS } from '../assets';
 import { GAME_WIDTH, SCENES } from '../constants';
-import {
-  PLAYER_PROFILE_REGISTRY_KEY,
-  normalizePlayerProfile,
-} from '../playerProfile';
 import { COLORS, FONT_FAMILY } from '../theme';
 import { createButton } from '../ui/createButton';
 
@@ -16,56 +12,13 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
-    const profile = normalizePlayerProfile(
-      this.registry.get(PLAYER_PROFILE_REGISTRY_KEY),
-    );
     this.cameras.main.setBackgroundColor(COLORS.espresso);
     this.drawBackdrop();
-
-    this.add
-      .text(GAME_WIDTH / 2, 64, 'FAIRWAYS', {
-        fontFamily: FONT_FAMILY,
-        fontSize: '34px',
-        fontStyle: 'bold',
-        color: '#f3e6c8',
-        stroke: '#24150f',
-        strokeThickness: 6,
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .text(GAME_WIDTH / 2, 101, '& FRIENDS', {
-        fontFamily: FONT_FAMILY,
-        fontSize: '24px',
-        fontStyle: 'bold',
-        color: '#d8a43e',
-        stroke: '#24150f',
-        strokeThickness: 5,
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .text(GAME_WIDTH / 2, 132, 'POCKET GOLF', {
-        fontFamily: FONT_FAMILY,
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#24150f',
-        backgroundColor: '#f3e6c8',
-        padding: { x: 8, y: 4 },
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .image(GAME_WIDTH / 2, 305, golferAsset(profile.gender, 'idle'))
-      .setOrigin(0.5, 1)
-      .setDisplaySize(112, 160)
-      .setFlipX(profile.handedness === 'left')
-      .setDepth(2);
 
     createButton(
       this,
       GAME_WIDTH / 2,
-      342,
+      353,
       188,
       52,
       'PLAY PRACTICE',
@@ -74,7 +27,7 @@ export class TitleScene extends Phaser.Scene {
     );
 
     this.add
-      .text(GAME_WIDTH / 2, 382, 'TOUCH PLAY OR PRESS ENTER', {
+      .text(GAME_WIDTH / 2, 391, 'TOUCH PLAY OR PRESS ENTER', {
         fontFamily: FONT_FAMILY,
         fontSize: '10px',
         color: '#c8b899',
@@ -82,7 +35,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 421, 'PROJECT 1 · GAMEPLAY CORRECTION', {
+      .text(GAME_WIDTH / 2, 423, 'PROJECT 1 · CAMERA & FLIGHT', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         color: '#76503a',
@@ -104,15 +57,14 @@ export class TitleScene extends Phaser.Scene {
 
   private drawBackdrop(): void {
     this.add
-      .image(0, 145, ASSETS.coursePanorama)
+      .image(0, 0, ASSETS.titleCover)
       .setOrigin(0)
-      .setDisplaySize(GAME_WIDTH, 207);
+      .setDisplaySize(GAME_WIDTH, 440);
 
     const graphics = this.add.graphics();
-    graphics.fillStyle(COLORS.espresso, 0.18);
-    graphics.fillRect(0, 145, GAME_WIDTH, 207);
-    graphics.lineStyle(2, COLORS.cream, 0.65);
-    graphics.lineBetween(0, 145, GAME_WIDTH, 145);
-    graphics.lineBetween(0, 352, GAME_WIDTH, 352);
+    graphics.fillStyle(COLORS.espresso, 0.72);
+    graphics.fillRect(0, 321, GAME_WIDTH, 119);
+    graphics.lineStyle(2, COLORS.marigold, 0.72);
+    graphics.lineBetween(0, 321, GAME_WIDTH, 321);
   }
 }
