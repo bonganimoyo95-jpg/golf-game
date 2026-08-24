@@ -1,0 +1,123 @@
+import { getLieAt, teePositionForChoice, type WorldPosition } from './courseModel';
+import type { Lie } from './data';
+import type { PlayerProfile } from './playerProfile';
+
+export const QA_SCENARIO_REGISTRY_KEY = 'qa-scenario';
+
+export type QaScenarioId =
+  | 'tee'
+  | 'fairway'
+  | 'rough'
+  | 'bunker'
+  | 'green-short'
+  | 'green-long'
+  | 'water-drop'
+  | 'out-of-bounds';
+
+export interface QaScenario {
+  id: QaScenarioId;
+  label: string;
+  instruction: string;
+  position?: WorldPosition;
+  expectedLie?: Lie;
+  clubIndex: number;
+  aimDegrees: number;
+}
+
+export interface ResolvedQaScenario extends QaScenario {
+  position: WorldPosition;
+  lie: Lie;
+}
+
+export const QA_SCENARIOS: readonly QaScenario[] = [
+  {
+    id: 'tee',
+    label: 'TEE SHOT',
+    instruction: 'VERIFY DRIVER, MAP AND OPENING VIEW',
+    clubIndex: 0,
+    aimDegrees: 0,
+  },
+  {
+    id: 'fairway',
+    label: 'FAIRWAY',
+    instruction: 'VERIFY BALL-BASED SECOND SHOT CAMERA',
+    position: { x: 2, y: 215 },
+    expectedLie: 'fairway',
+    clubIndex: 1,
+    aimDegrees: 0,
+  },
+  {
+    id: 'rough',
+    label: 'ROUGH',
+    instruction: 'VERIFY ROUGH LIE AND CLUB RESTRICTIONS',
+    position: { x: -44, y: 300 },
+    expectedLie: 'rough',
+    clubIndex: 1,
+    aimDegrees: 8,
+  },
+  {
+    id: 'bunker',
+    label: 'BUNKER',
+    instruction: 'VERIFY SAND OVERRIDES THE GREEN',
+    position: { x: -15, y: 377 },
+    expectedLie: 'bunker',
+    clubIndex: 2,
+    aimDegrees: 10,
+  },
+  {
+    id: 'green-short',
+    label: 'PUTT 6 M',
+    instruction: 'VERIFY CUP LINE, FACING AND POWER GUIDE',
+    position: { x: 0, y: 386 },
+    expectedLie: 'green',
+    clubIndex: 3,
+    aimDegrees: 0,
+  },
+  {
+    id: 'green-long',
+    label: 'PUTT 18 M',
+    instruction: 'VERIFY LONG-PUTT POWER GUIDE',
+    position: { x: 0, y: 374 },
+    expectedLie: 'green',
+    clubIndex: 3,
+    aimDegrees: 0,
+  },
+  {
+    id: 'water-drop',
+    label: 'WATER DROP',
+    instruction: 'USE FULL IRON AT -18° · VERIFY ENTRY DROP',
+    position: { x: 0, y: 100 },
+    expectedLie: 'fairway',
+    clubIndex: 1,
+    aimDegrees: -18,
+  },
+  {
+    id: 'out-of-bounds',
+    label: 'OUT OF BOUNDS',
+    instruction: 'USE FULL IRON AT +30° · VERIFY PREVIOUS SPOT',
+    position: { x: 5, y: 250 },
+    expectedLie: 'fairway',
+    clubIndex: 1,
+    aimDegrees: 30,
+  },
+] as const;
+
+export function findQaScenario(value: unknown): QaScenario | undefined {
+  return QA_SCENARIOS.find((scenario) => scenario.id === value);
+}
+
+export function resolveQaScenario(
+  value: unknown,
+  profile: PlayerProfile,
+): ResolvedQaScenario | undefined {
+  const scenario = findQaScenario(value);
+  if (!scenario) return undefined;
+  const position = scenario.position
+    ? { ...scenario.position }
+    : teePositionForChoice(profile.tee);
+  return {
+    ...scenario,
+    position,
+    lie: getLieAt(position),
+  };
+}

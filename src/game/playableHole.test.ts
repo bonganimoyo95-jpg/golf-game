@@ -36,6 +36,7 @@ describe('playable hole', () => {
     const putt = takeShot(wedge.resolvedEnd, wedge.finalLie, 3, 0.78, bearingToCup);
 
     expect(drive.penalty).toBe(false);
+    expect(approach.start).toEqual(drive.resolvedEnd);
     expect(approach.penalty).toBe(false);
     expect(wedge.finalLie).toBe('green');
     expect(putt.holed).toBe(true);

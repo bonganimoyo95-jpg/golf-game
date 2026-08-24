@@ -28,6 +28,8 @@ export function createButton(
     .rectangle(0, 0, width, height, fillColor)
     .setStrokeStyle(2, borderColor)
     .setInteractive({ useHandCursor: true });
+  background.setData('normal-fill', fillColor);
+  background.setData('selected', false);
 
   const text = scene.add
     .text(0, 0, label, {
@@ -45,7 +47,11 @@ export function createButton(
     .setDepth(options.depth ?? 1);
 
   background.on('pointerover', () => background.setFillStyle(hoverColor));
-  background.on('pointerout', () => background.setFillStyle(fillColor));
+  background.on('pointerout', () =>
+    background.setFillStyle(
+      background.getData('selected') ? COLORS.marigold : fillColor,
+    ),
+  );
   background.on('pointerdown', () => background.setScale(0.97));
   background.on('pointerup', () => {
     background.setScale(1);
@@ -54,4 +60,15 @@ export function createButton(
   background.on('pointerupoutside', () => background.setScale(1));
 
   return button;
+}
+
+export function setButtonSelected(
+  button: Phaser.GameObjects.Container,
+  selected: boolean,
+): void {
+  const background = button.getAt(0) as Phaser.GameObjects.Rectangle;
+  background.setData('selected', selected);
+  background.setFillStyle(
+    selected ? COLORS.marigold : (background.getData('normal-fill') as number),
+  );
 }

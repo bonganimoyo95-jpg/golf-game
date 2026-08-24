@@ -63,7 +63,7 @@ describe('shot physics', () => {
   });
 
   it('adds a penalty and drops at the water entry point', () => {
-    const waterShot = calculateShot({ ...baseInput, aimDegrees: -16 });
+    const waterShot = calculateShot({ ...baseInput, aimDegrees: -15 });
     expect(waterShot.penalty).toBe(true);
     expect(waterShot.penaltyType).toBe('water');
     expect(waterShot.strokeCost).toBe(2);
@@ -71,6 +71,21 @@ describe('shot physics', () => {
     expect(waterShot.dropPosition).toEqual(waterShot.resolvedEnd);
     expect(waterShot.resolvedEnd).not.toEqual(TEE_POSITION);
     expect(getLieAt(waterShot.resolvedEnd)).not.toBe('water');
+  });
+
+  it('recognizes a shot that lands in either greenside bunker', () => {
+    const bunkerShot = calculateShot({
+      ...baseInput,
+      start: { x: 0, y: 300 },
+      club: CLUBS[2],
+      power: 1,
+      aimDegrees: -12,
+      startingLie: 'fairway',
+    });
+
+    expect(bunkerShot.landingLie).toBe('bunker');
+    expect(bunkerShot.resolvedLie).toBe('bunker');
+    expect(bunkerShot.penalty).toBe(false);
   });
 
   it('captures a controlled putt and finishes it at the pin', () => {

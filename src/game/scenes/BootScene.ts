@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ASSET_PATHS } from '../assets';
+import { BOOT_ASSET_PATHS } from '../assets';
 import { SCENES } from '../constants';
 import {
   DEFAULT_PLAYER_PROFILE,
@@ -12,7 +12,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    for (const [key, path] of ASSET_PATHS) {
+    for (const [key, path] of BOOT_ASSET_PATHS) {
       this.load.image(key, path);
     }
   }

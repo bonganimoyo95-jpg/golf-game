@@ -1,18 +1,20 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains Project 1 Checkpoint 7: the camera, flight and identity release.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.8.0, the course, camera and QA architecture release.
 
 ## What works now
 
 - Responsive 352 × 440 Phaser canvas
 - Photo-derived male and female pixel-art golfers based on the Fairways & Friends hosts
 - Fairways & Friends Pocket Golf illustrated cover screen
-- Pre-round male/female and right/left-handed selection
+- Pre-round golfer, right/left-handed stance and independent tee selection
 - Mirrored play direction and meter placement for left-handed golfers
-- Shorter female club distances balanced by a 42-metre front tee
+- Identical club performance for both golfers; back/forward tees are a player choice
 - Twelve consistent poses per golfer covering setup, swing, putting and scoring
 - Slower, smoother backswing-to-impact sequence with a held follow-through
-- Matched Pacific Northwest tee panorama and overhead map depicting the same hole
+- One authoritative course definition shared by surface detection and both gameplay views
+- Procedurally drawn overhead fairway, lakes, green, bunkers and tees that cannot drift from collision geometry
+- Position-aware 2.5D lower course view projected from the ball instead of cropping one tee panorama
 - Updated title and score screens using the new golfer and course artwork
 - Title screen and hole-introduction screen
 - Split overhead-map and golfer-view game screen
@@ -25,7 +27,7 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Different carry, trajectory and rollout behavior for each club
 - Airborne flight, landing, bounce and rollout phases
 - Ball position and next-shot camera origin retained after every landing
-- Forward-chasing landing camera that settles on the ball instead of returning to the tee
+- Forward-chasing world camera that moves along the calculated trajectory and settles at the landing position
 - Directionally correct, asymmetric airborne arc plus bounce and rollout
 - Prominent live distance-to-pin and lie display
 - Fairway, rough, bunker, green, water and out-of-bounds detection
@@ -33,6 +35,7 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Out-of-bounds penalties that return to the previous spot
 - Bunker-first surface classification that cannot incorrectly force the putter
 - Side-on putting view aligned with the direction of play and the cup
+- Fixed putting target with an independently adjustable, mirrored aim line
 - Green scenery that retains the same horizon and course environment
 - One-degree putting aim adjustments and a visible suggested-power marker
 - Tee-only driver selection; fairway, rough and bunker club lists follow the lie
@@ -42,8 +45,13 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Replay and return-to-title choices after completing the hole
 - Keyboard and touch controls
 - Pause, restart and return-to-title controls
+- Pause behavior that freezes swing timers and ball-flight tweens together
+- Optional `?qa=1` scenario lab for tee, fairway, rough, bunker, putting, water and out-of-bounds checks
+- Deterministic per-shot replay logs, local persistence and QA-mode clipboard export
+- Deferred gameplay-art loading after the title screen
+- Native 352-pixel desktop canvas sizing for crisper pixel presentation
 
-Audio, additional holes, advanced shot types and final effects polish remain intentionally deferred.
+Audio, additional holes, advanced shot types and final character/effects polish remain intentionally deferred. v0.8.0 still requires the final hands-on Codespaces acceptance pass described in `docs/PROJECT_2_CHECKPOINT_1.md`.
 
 ## Run the game locally
 
@@ -89,6 +97,12 @@ npm run build
 
 The production website is generated in `dist/`. That folder is intentionally ignored by Git because it can be rebuilt at any time.
 
+The automated release baseline is `52` passing tests across `12` files.
+
+## QA scenario lab
+
+Append `?qa=1` to the game URL, for example `http://localhost:5173/?qa=1`. The title screen will show **QA Lab**. Each scenario starts directly at a gameplay seam with a tested lie, club and aim preset. While paused in QA mode, **Copy Replay** copies the deterministic shot log for the current run.
+
 ## Project documents
 
 - [`docs/PROJECT_0_SPEC.md`](docs/PROJECT_0_SPEC.md) — approved product specification
@@ -99,6 +113,8 @@ The production website is generated in `dist/`. That folder is intentionally ign
 - [`docs/PROJECT_1_CHECKPOINT_5.md`](docs/PROJECT_1_CHECKPOINT_5.md) — pixel-art checkpoint record
 - [`docs/PROJECT_1_CHECKPOINT_6.md`](docs/PROJECT_1_CHECKPOINT_6.md) — gameplay-correction record
 - [`docs/PROJECT_1_CHECKPOINT_7.md`](docs/PROJECT_1_CHECKPOINT_7.md) — camera, flight and identity record
+- [`docs/PROJECT_1_CHECKPOINT_8.md`](docs/PROJECT_1_CHECKPOINT_8.md) — gameplay QA correction record
+- [`docs/PROJECT_2_CHECKPOINT_1.md`](docs/PROJECT_2_CHECKPOINT_1.md) — v0.8 course, camera and QA architecture record
 
 ## Technical choices
 

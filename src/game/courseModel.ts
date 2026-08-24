@@ -1,92 +1,95 @@
-import { LIE_TUNING, PROTOTYPE_HOLE, type Lie } from './data';
-import type { GolferGender } from './playerProfile';
+import { LIE_TUNING, type Lie } from './data';
+import {
+  BACK_TEE_POSITION,
+  COURSE_DEFINITION,
+  FRONT_TEE_POSITION,
+  PIN_POSITION,
+  fairwayCentreAt,
+  fairwayHalfWidthAt,
+  insideEllipse,
+  type WorldPosition,
+} from './courseDefinition';
+import type { TeeChoice } from './playerProfile';
 
-export interface WorldPosition {
-  x: number;
-  y: number;
-}
+export type { WorldPosition } from './courseDefinition';
+export {
+  BACK_TEE_POSITION,
+  COURSE_DEFINITION,
+  FRONT_TEE_POSITION,
+  PIN_POSITION,
+  fairwayCentreAt,
+  fairwayHalfWidthAt,
+} from './courseDefinition';
 
 export interface ScreenPosition {
   x: number;
   y: number;
 }
 
-export const BACK_TEE_POSITION: Readonly<WorldPosition> = { x: 0, y: 0 };
-export const FRONT_TEE_POSITION: Readonly<WorldPosition> = { x: 0, y: 42 };
+export interface CourseMapBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export const TEE_POSITION = BACK_TEE_POSITION;
-export const PIN_POSITION: Readonly<WorldPosition> = {
-  x: 0,
-  y: PROTOTYPE_HOLE.distanceMetres,
+export const DEFAULT_COURSE_MAP_BOUNDS: Readonly<CourseMapBounds> = {
+  x: 8,
+  y: 43,
+  width: 336,
+  height: 151,
 };
 
-const MAP_CENTRE_X = 176;
-const MAP_TEE_Y = 177;
-const MAP_PIN_Y = 64;
-const MAP_LATERAL_METRES = 74;
-const MAP_LATERAL_PIXELS = 145;
-
-function insideEllipse(
-  position: WorldPosition,
-  centre: WorldPosition,
-  radiusX: number,
-  radiusY: number,
-): boolean {
-  const x = (position.x - centre.x) / radiusX;
-  const y = (position.y - centre.y) / radiusY;
-  return x * x + y * y <= 1;
-}
-
-function fairwayCentre(y: number): number {
-  const progress = Math.max(0, Math.min(1, y / PROTOTYPE_HOLE.distanceMetres));
-  return Math.sin(progress * Math.PI * 1.25) * 8;
-}
-
-function fairwayHalfWidth(y: number): number {
-  const progress = Math.max(0, Math.min(1, y / PROTOTYPE_HOLE.distanceMetres));
-  return 23 + Math.sin(progress * Math.PI) * 12;
+function isInsideBounds(position: WorldPosition): boolean {
+  const bounds = COURSE_DEFINITION.bounds;
+  return (
+    position.x >= bounds.minimumX &&
+    position.x <= bounds.maximumX &&
+    position.y >= bounds.minimumY &&
+    position.y <= bounds.maximumY
+  );
 }
 
 export function getLieAt(position: WorldPosition): Lie {
-  if (position.x < -74 || position.x > 74 || position.y < -8 || position.y > 414) {
-    return 'outOfBounds';
-  }
+  if (!isInsideBounds(position)) return 'outOfBounds';
 
-  // The illustrated bunkers overlap the edge of the green. Hazards take
-  // precedence so a ball visibly in sand can never be assigned the putter.
+  // Sand overlaps the putting surface in the authored definition. This order
+  // is shared by gameplay and rendering, so visible sand always plays as sand.
+  const bunker = COURSE_DEFINITION.surfaces.find(
+    (surface) => surface.lie === 'bunker' && insideEllipse(position, surface),
+  );
+  if (bunker) return 'bunker';
+
+  const green = COURSE_DEFINITION.surfaces.find(
+    (surface) => surface.lie === 'green' && insideEllipse(position, surface),
+  );
+  if (green) return 'green';
+
+  const water = COURSE_DEFINITION.surfaces.find(
+    (surface) => surface.lie === 'water' && insideEllipse(position, surface),
+  );
+  if (water) return 'water';
+
+  const tee = COURSE_DEFINITION.tees.find(
+    (surface) =>
+      Math.abs(position.x - surface.centre.x) <= surface.halfWidth &&
+      Math.abs(position.y - surface.centre.y) <= surface.halfDepth,
+  );
+  if (tee) return 'tee';
+
   if (
-    insideEllipse(position, { x: -15, y: 377 }, 12, 16) ||
-    insideEllipse(position, { x: 17, y: 376 }, 12, 15)
+    Math.abs(position.x - fairwayCentreAt(position.y)) <=
+    fairwayHalfWidthAt(position.y)
   ) {
-    return 'bunker';
-  }
-
-  if (insideEllipse(position, PIN_POSITION, 29, 19)) {
-    return 'green';
-  }
-
-  if (
-    insideEllipse(position, { x: -53, y: 176 }, 24, 92) ||
-    insideEllipse(position, { x: 55, y: 245 }, 18, 72)
-  ) {
-    return 'water';
-  }
-
-  if (
-    (position.y <= 15 && Math.abs(position.x) <= 16) ||
-    (position.y >= 34 && position.y <= 50 && Math.abs(position.x) <= 16)
-  ) {
-    return 'tee';
-  }
-
-  if (Math.abs(position.x - fairwayCentre(position.y)) <= fairwayHalfWidth(position.y)) {
     return 'fairway';
   }
 
   return 'rough';
 }
 
-export function teePositionForGender(gender: GolferGender): WorldPosition {
-  return gender === 'female'
+export function teePositionForChoice(tee: TeeChoice): WorldPosition {
+  return tee === 'forward'
     ? { ...FRONT_TEE_POSITION }
     : { ...BACK_TEE_POSITION };
 }
@@ -99,13 +102,37 @@ export function distanceToPin(position: WorldPosition): number {
   return distanceBetween(position, PIN_POSITION);
 }
 
-export function worldToMap(position: WorldPosition): ScreenPosition {
-  const x = MAP_CENTRE_X + (position.x / MAP_LATERAL_METRES) * MAP_LATERAL_PIXELS;
-  const y = MAP_TEE_Y - (position.y / PROTOTYPE_HOLE.distanceMetres) * (MAP_TEE_Y - MAP_PIN_Y);
+export function worldToMapWithin(
+  position: WorldPosition,
+  mapBounds: CourseMapBounds,
+): ScreenPosition {
+  const courseBounds = COURSE_DEFINITION.bounds;
+  const horizontalPadding = Math.min(13, mapBounds.width * 0.08);
+  const verticalPadding = Math.min(12, mapBounds.height * 0.08);
+  const usableWidth = mapBounds.width - horizontalPadding * 2;
+  const usableHeight = mapBounds.height - verticalPadding * 2;
+  const xProgress =
+    (position.x - courseBounds.minimumX) /
+    (courseBounds.maximumX - courseBounds.minimumX);
+  const yProgress =
+    (position.y - courseBounds.minimumY) /
+    (courseBounds.maximumY - courseBounds.minimumY);
+
   return {
-    x: Math.max(13, Math.min(339, x)),
-    y: Math.max(48, Math.min(189, y)),
+    x:
+      mapBounds.x +
+      horizontalPadding +
+      Math.max(0, Math.min(1, xProgress)) * usableWidth,
+    y:
+      mapBounds.y +
+      mapBounds.height -
+      verticalPadding -
+      Math.max(0, Math.min(1, yProgress)) * usableHeight,
   };
+}
+
+export function worldToMap(position: WorldPosition): ScreenPosition {
+  return worldToMapWithin(position, DEFAULT_COURSE_MAP_BOUNDS);
 }
 
 export function lieLabel(lie: Lie): string {

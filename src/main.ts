@@ -5,6 +5,8 @@ import { BootScene } from './game/scenes/BootScene';
 import { GameScene } from './game/scenes/GameScene';
 import { GolferSelectScene } from './game/scenes/GolferSelectScene';
 import { HoleIntroScene } from './game/scenes/HoleIntroScene';
+import { LoadingScene } from './game/scenes/LoadingScene';
+import { QaScene } from './game/scenes/QaScene';
 import { ResultScene } from './game/scenes/ResultScene';
 import { TitleScene } from './game/scenes/TitleScene';
 import { COLORS } from './game/theme';
@@ -34,7 +36,9 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [
     BootScene,
     TitleScene,
+    LoadingScene,
     GolferSelectScene,
+    QaScene,
     HoleIntroScene,
     GameScene,
     ResultScene,

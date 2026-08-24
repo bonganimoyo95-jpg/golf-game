@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { ASSETS } from '../assets';
 import { GAME_WIDTH, SCENES } from '../constants';
+import { isQaMode } from '../qaMode';
+import { QA_SCENARIO_REGISTRY_KEY } from '../qaScenarios';
 import { COLORS, FONT_FAMILY } from '../theme';
 import { createButton } from '../ui/createButton';
 
@@ -15,16 +17,27 @@ export class TitleScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(COLORS.espresso);
     this.drawBackdrop();
 
+    const qaMode = isQaMode();
+
     createButton(
       this,
-      GAME_WIDTH / 2,
+      qaMode ? 119 : GAME_WIDTH / 2,
       353,
-      188,
+      qaMode ? 198 : 188,
       52,
       'PLAY PRACTICE',
       () => this.startGame(),
       { fontSize: '15px' },
     );
+
+    if (qaMode) {
+      createButton(this, 293, 353, 94, 52, 'QA LAB', () => this.startQa(), {
+        fillColor: COLORS.brownLight,
+        hoverColor: COLORS.marigold,
+        textColor: '#f3e6c8',
+        fontSize: '11px',
+      });
+    }
 
     this.add
       .text(GAME_WIDTH / 2, 391, 'TOUCH PLAY OR PRESS ENTER', {
@@ -35,7 +48,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 423, 'PROJECT 1 · CAMERA & FLIGHT', {
+      .text(GAME_WIDTH / 2, 423, 'FAIRWAYS & FRIENDS · PRACTICE ROUND', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         color: '#76503a',
@@ -52,7 +65,12 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private startGame(): void {
-    this.scene.start(SCENES.golferSelect);
+    this.registry.remove(QA_SCENARIO_REGISTRY_KEY);
+    this.scene.start(SCENES.loading, { nextScene: SCENES.golferSelect });
+  }
+
+  private startQa(): void {
+    this.scene.start(SCENES.loading, { nextScene: SCENES.qa });
   }
 
   private drawBackdrop(): void {

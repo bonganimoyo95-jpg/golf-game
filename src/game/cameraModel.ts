@@ -1,22 +1,37 @@
-import { PROTOTYPE_HOLE } from './data';
-import { distanceBetween, type WorldPosition } from './courseModel';
+import type { Lie } from './data';
+import {
+  PIN_POSITION,
+  distanceToPin,
+  type WorldPosition,
+} from './courseModel';
 import type { Handedness } from './playerProfile';
 import type { ShotResult, TrajectoryPoint } from './physics/shotPhysics';
-
-export interface CropRectangle {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 export interface ScreenPoint {
   x: number;
   y: number;
 }
 
-export const LANDSCAPE_SOURCE_WIDTH = 672;
-export const LANDSCAPE_SOURCE_HEIGHT = 302;
+export interface CourseCamera {
+  position: WorldPosition;
+  bearingDegrees: number;
+}
+
+export interface ProjectedCoursePoint extends ScreenPoint {
+  forwardMetres: number;
+  lateralMetres: number;
+  scale: number;
+  visible: boolean;
+}
+
+export type CourseViewStage = 'tee' | 'fairway' | 'approach' | 'green';
+
+export const COURSE_VIEW_LEFT = 8;
+export const COURSE_VIEW_TOP = 201;
+export const COURSE_VIEW_WIDTH = 336;
+export const COURSE_VIEW_HEIGHT = 151;
+export const COURSE_VIEW_CENTRE_X = COURSE_VIEW_LEFT + COURSE_VIEW_WIDTH / 2;
+export const COURSE_VIEW_HORIZON_Y = 257;
 export const LANDSCAPE_GROUND_Y = 329;
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -28,49 +43,117 @@ function smoothStep(value: number): number {
   return clamped * clamped * (3 - 2 * clamped);
 }
 
-function easeOutCubic(value: number): number {
-  const clamped = clamp(value, 0, 1);
-  return 1 - Math.pow(1 - clamped, 3);
+function directionVector(degrees: number): WorldPosition {
+  const radians = (degrees * Math.PI) / 180;
+  return { x: Math.sin(radians), y: Math.cos(radians) };
 }
 
-export function courseProgress(position: WorldPosition): number {
-  return clamp(position.y / PROTOTYPE_HOLE.distanceMetres, 0, 1);
+export function bearingBetween(
+  from: WorldPosition,
+  to: WorldPosition,
+): number {
+  return (Math.atan2(to.x - from.x, to.y - from.y) * 180) / Math.PI;
 }
 
-export function landscapeCropForPosition(
+export function bearingToPinFrom(position: WorldPosition): number {
+  return bearingBetween(position, PIN_POSITION);
+}
+
+export function courseViewStage(
   position: WorldPosition,
-  chaseZoom = 0,
-): CropRectangle {
-  const progress = courseProgress(position);
-  const zoom = 1 + progress * 0.36 + clamp(chaseZoom, 0, 1) * 0.22;
-  const width = LANDSCAPE_SOURCE_WIDTH / zoom;
-  const height = LANDSCAPE_SOURCE_HEIGHT / zoom;
-  const lateral = clamp(position.x / 74, -1, 1);
-  const centreX = clamp(
-    LANDSCAPE_SOURCE_WIDTH / 2 + lateral * 72,
-    width / 2,
-    LANDSCAPE_SOURCE_WIDTH - width / 2,
-  );
-  const centreY = clamp(
-    LANDSCAPE_SOURCE_HEIGHT / 2 + progress * 36,
-    height / 2,
-    LANDSCAPE_SOURCE_HEIGHT - height / 2,
-  );
+  lie?: Lie,
+): CourseViewStage {
+  if (lie === 'green') return 'green';
+  if (distanceToPin(position) <= 105) return 'approach';
+  if (position.y >= 70) return 'fairway';
+  return 'tee';
+}
+
+export function worldToCameraSpace(
+  point: WorldPosition,
+  camera: CourseCamera,
+): { forwardMetres: number; lateralMetres: number } {
+  const radians = (camera.bearingDegrees * Math.PI) / 180;
+  const deltaX = point.x - camera.position.x;
+  const deltaY = point.y - camera.position.y;
+  return {
+    forwardMetres: deltaX * Math.sin(radians) + deltaY * Math.cos(radians),
+    lateralMetres: deltaX * Math.cos(radians) - deltaY * Math.sin(radians),
+  };
+}
+
+export function projectWorldToCourseView(
+  point: WorldPosition,
+  camera: CourseCamera,
+  heightMetres = 0,
+): ProjectedCoursePoint {
+  const { forwardMetres, lateralMetres } = worldToCameraSpace(point, camera);
+  const projectionDepth = Math.max(0, forwardMetres);
+  const depthShare = projectionDepth / (projectionDepth + 42);
+  const scale = 1 - depthShare * 0.82;
+  const groundY =
+    LANDSCAPE_GROUND_Y -
+    depthShare * (LANDSCAPE_GROUND_Y - COURSE_VIEW_HORIZON_Y);
+  const x = COURSE_VIEW_CENTRE_X + lateralMetres * 2.3 * scale;
+  const y = groundY - heightMetres * (1.5 + scale * 0.65);
 
   return {
-    x: centreX - width / 2,
-    y: centreY - height / 2,
-    width,
-    height,
+    x,
+    y,
+    forwardMetres,
+    lateralMetres,
+    scale,
+    visible:
+      forwardMetres >= -6 &&
+      forwardMetres <= 480 &&
+      x >= COURSE_VIEW_LEFT - 110 &&
+      x <= COURSE_VIEW_LEFT + COURSE_VIEW_WIDTH + 110 &&
+      y >= COURSE_VIEW_TOP - 30 &&
+      y <= COURSE_VIEW_TOP + COURSE_VIEW_HEIGHT + 20,
   };
+}
+
+export function shotCameraForSample(
+  result: ShotResult,
+  sample: TrajectoryPoint,
+  animationProgress: number,
+): CourseCamera {
+  const direction = directionVector(result.launchDirectionDegrees);
+  const initialCamera = {
+    x: result.start.x - direction.x * 3,
+    y: result.start.y - direction.y * 3,
+  };
+  const chaseDistance = 18;
+  const desiredCamera = {
+    x: sample.x - direction.x * chaseDistance,
+    y: sample.y - direction.y * chaseDistance,
+  };
+  const chase = smoothStep(clamp(animationProgress / 0.72, 0, 1));
+
+  return {
+    position: {
+      x: initialCamera.x + (desiredCamera.x - initialCamera.x) * chase,
+      y: initialCamera.y + (desiredCamera.y - initialCamera.y) * chase,
+    },
+    bearingDegrees: result.launchDirectionDegrees,
+  };
+}
+
+export function shotCameraTravelMetres(
+  result: ShotResult,
+  sample: TrajectoryPoint,
+  animationProgress: number,
+): number {
+  const camera = shotCameraForSample(result, sample, animationProgress);
+  const direction = directionVector(result.launchDirectionDegrees);
+  return (
+    (camera.position.x - result.start.x) * direction.x +
+    (camera.position.y - result.start.y) * direction.y
+  );
 }
 
 export function ballAddressScreenX(handedness: Handedness): number {
   return handedness === 'right' ? 132 : 220;
-}
-
-export function ballLandingScreenX(handedness: Handedness): number {
-  return handedness === 'right' ? 220 : 132;
 }
 
 export function shotBallScreenPosition(
@@ -79,23 +162,51 @@ export function shotBallScreenPosition(
   animationProgress: number,
   handedness: Handedness,
 ): ScreenPoint {
-  const direction = handedness === 'right' ? 1 : -1;
-  const startX = ballAddressScreenX(handedness);
-  const totalDistance = Math.max(0.01, distanceBetween(result.start, result.visualEnd));
-  const travelled = clamp(distanceBetween(result.start, sample) / totalDistance, 0, 1.15);
-  const airborneTravel = easeOutCubic(Math.min(animationProgress / 0.7, 1));
-  const projectedX = startX + direction * (64 + travelled * 92) * airborneTravel;
-  const chase = smoothStep((animationProgress - 0.57) / 0.43);
-  const x = projectedX + (ballLandingScreenX(handedness) - projectedX) * chase;
-  const finalDirectionOffset = clamp(
-    result.launchDirectionDegrees - result.aimDegrees,
-    -18,
-    18,
-  );
-  const groundY = LANDSCAPE_GROUND_Y + finalDirectionOffset * 0.32;
+  const camera = shotCameraForSample(result, sample, animationProgress);
+  const projected = projectWorldToCourseView(sample, camera, sample.height);
+  const launchBlend = smoothStep(animationProgress / 0.16);
+  return {
+    x: clamp(
+      ballAddressScreenX(handedness) +
+        (projected.x - ballAddressScreenX(handedness)) * launchBlend,
+      COURSE_VIEW_LEFT + 3,
+      COURSE_VIEW_LEFT + COURSE_VIEW_WIDTH - 3,
+    ),
+    y: clamp(
+      LANDSCAPE_GROUND_Y +
+        (projected.y - LANDSCAPE_GROUND_Y) * launchBlend,
+      COURSE_VIEW_TOP + 3,
+      COURSE_VIEW_TOP + COURSE_VIEW_HEIGHT - 5,
+    ),
+  };
+}
+
+export function puttingAimTargetScreenPosition(
+  ball: ScreenPoint,
+  cup: ScreenPoint,
+  relativeAimDegrees: number,
+): ScreenPoint {
+  const radians = (relativeAimDegrees * Math.PI) / 180;
+  return {
+    x: cup.x,
+    y: clamp(ball.y + (cup.x - ball.x) * Math.tan(radians), 286, 350),
+  };
+}
+
+export function puttingRollScreenPosition(
+  ball: ScreenPoint,
+  cup: ScreenPoint,
+  distanceRatio: number,
+  relativeAimDegrees: number,
+): ScreenPoint {
+  const availablePixels = Math.abs(cup.x - ball.x);
+  const direction = cup.x >= ball.x ? 1 : -1;
+  const travelPixels = availablePixels * clamp(distanceRatio, 0, 1.28);
+  const x = clamp(ball.x + direction * travelPixels, 11, 341);
+  const radians = (relativeAimDegrees * Math.PI) / 180;
 
   return {
-    x: clamp(x, 10, 342),
-    y: clamp(groundY - sample.height * 2.45, 213, 346),
+    x,
+    y: clamp(ball.y + (x - ball.x) * Math.tan(radians), 286, 350),
   };
 }

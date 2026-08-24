@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { drawCourseMapBase } from '../courseArt';
-import { distanceToPin, teePositionForGender } from '../courseModel';
+import { distanceToPin, teePositionForChoice } from '../courseModel';
 import { PROTOTYPE_HOLE } from '../data';
 import { GAME_WIDTH, SCENES } from '../constants';
 import {
   PLAYER_PROFILE_REGISTRY_KEY,
   normalizePlayerProfile,
   profileLabel,
+  teeLabel,
 } from '../playerProfile';
 import { COLORS, FONT_FAMILY } from '../theme';
 import { createButton } from '../ui/createButton';
@@ -23,7 +24,7 @@ export class HoleIntroScene extends Phaser.Scene {
     const profile = normalizePlayerProfile(
       this.registry.get(PLAYER_PROFILE_REGISTRY_KEY),
     );
-    const teePosition = teePositionForGender(profile.gender);
+    const teePosition = teePositionForChoice(profile.tee);
     this.cameras.main.setBackgroundColor(COLORS.espresso);
 
     this.add
@@ -47,7 +48,7 @@ export class HoleIntroScene extends Phaser.Scene {
     drawCourseMapBase(this, { x: 12, y: 82, width: 328, height: 148 });
 
     this.add
-      .text(GAME_WIDTH / 2, 241, 'TEE VIEW AND AERIAL MAP SHARE ONE HOLE', {
+      .text(GAME_WIDTH / 2, 241, 'THREAD THE WATER · FIND THE FAIRWAY', {
         fontFamily: FONT_FAMILY,
         fontSize: '8px',
         fontStyle: 'bold',
@@ -81,9 +82,7 @@ export class HoleIntroScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         331,
-        `${profileLabel(profile)} · ${
-          profile.gender === 'female' ? 'FRONT TEES' : 'BACK TEES'
-        }`,
+        `${profileLabel(profile)} · ${teeLabel(profile.tee)}`,
         {
           fontFamily: FONT_FAMILY,
           fontSize: '9px',

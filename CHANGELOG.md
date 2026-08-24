@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.8.0 — Course, camera and QA architecture release
+
+- Added one authoritative course definition for bounds, tees, fairway shape, lakes, green, bunkers and pin.
+- Replaced the hand-matched overhead gameplay image with a procedural map drawn from the exact collision geometry.
+- Replaced panorama cropping in gameplay with a position-aware 2.5D projection from the current ball and moving chase camera.
+- Made the lower course view render fairway and hazard positions from the same world coordinates used by shot physics.
+- Added direct-start QA scenarios for tee, fairway, rough, bunker, 6-metre and 18-metre putts, water drops and out-of-bounds.
+- Added deterministic replay records that reproduce shot inputs and resolved outcomes, persist locally, and can be copied from the QA pause menu.
+- Separated golfer appearance, handedness and tee choice; both golfers now use identical club distances.
+- Added selected-state feedback to golfer, stance and tee controls.
+- Deferred golfer and course art until Play is pressed instead of loading every asset before the title screen.
+- Removed internal checkpoint copy from the public title and hole-introduction screens.
+- Capped the desktop presentation at the native 352-pixel canvas width for sharper pixel rendering.
+- Expanded automated coverage from 42 to 52 tests across 12 files.
+
+## 0.7.1 — Gameplay QA correction release
+
+- Removed the late-flight screen reversal that made the ball appear to travel back toward the tee while the camera caught up.
+- Held the landing camera on the resolved ball position until the deliberate cut to the next address view.
+- Froze both delayed swing events and active tweens while paused, preventing shots from continuing behind the pause overlay.
+- Kept the putting cup and flag fixed in place while allowing the player's aim line to move honestly around the target.
+- Made missed-putt screen motion use the same angular miss represented by the shot model.
+- Limited green aim adjustments to a readable eight-degree range.
+- Hid the flight ball when a penalty resolves to a different legal ball position.
+- Added runtime asset-manifest, monotonic camera, mirrored putting, shot-origin and bunker-shot regression coverage.
+- Expanded automated coverage from 36 to 42 tests across 10 files.
+
 ## 0.7.0 — Camera, flight and identity release
 
 - Replaced both playable golfers with twelve-pose pixel-art versions of the man and woman in the supplied Fairways & Friends photo.

@@ -5,17 +5,28 @@ import {
   PLAYER_PROFILE_REGISTRY_KEY,
   normalizePlayerProfile,
   profileLabel,
+  teeLabel,
   type GolferGender,
   type Handedness,
   type PlayerProfile,
+  type TeeChoice,
 } from '../playerProfile';
 import { COLORS, FONT_FAMILY } from '../theme';
-import { createButton } from '../ui/createButton';
+import { createButton, setButtonSelected } from '../ui/createButton';
+
+type ButtonPair<T extends string> = Record<T, Phaser.GameObjects.Container>;
 
 export class GolferSelectScene extends Phaser.Scene {
-  private profile: PlayerProfile = { gender: 'male', handedness: 'right' };
+  private profile: PlayerProfile = {
+    gender: 'male',
+    handedness: 'right',
+    tee: 'back',
+  };
   private preview!: Phaser.GameObjects.Image;
   private summary!: Phaser.GameObjects.Text;
+  private genderButtons!: ButtonPair<GolferGender>;
+  private handednessButtons!: ButtonPair<Handedness>;
+  private teeButtons!: ButtonPair<TeeChoice>;
   private enterKey!: Phaser.Input.Keyboard.Key;
   private escapeKey!: Phaser.Input.Keyboard.Key;
 
@@ -37,12 +48,12 @@ export class GolferSelectScene extends Phaser.Scene {
 
     const panel = this.add.graphics();
     panel.fillStyle(COLORS.tobacco, 0.98);
-    panel.fillRoundedRect(15, 18, GAME_WIDTH - 30, 404, 12);
+    panel.fillRoundedRect(15, 15, GAME_WIDTH - 30, 410, 12);
     panel.lineStyle(2, COLORS.cream, 0.72);
-    panel.strokeRoundedRect(15, 18, GAME_WIDTH - 30, 404, 12);
+    panel.strokeRoundedRect(15, 15, GAME_WIDTH - 30, 410, 12);
 
     this.add
-      .text(GAME_WIDTH / 2, 42, 'CHOOSE YOUR GOLFER', {
+      .text(GAME_WIDTH / 2, 38, 'BUILD YOUR GOLFER', {
         fontFamily: FONT_FAMILY,
         fontSize: '21px',
         fontStyle: 'bold',
@@ -51,33 +62,33 @@ export class GolferSelectScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 68, 'GOLFER · STANCE · TEE', {
+      .text(GAME_WIDTH / 2, 62, 'LOOK · STANCE · TEE ARE INDEPENDENT', {
         fontFamily: FONT_FAMILY,
-        fontSize: '9px',
+        fontSize: '8px',
         fontStyle: 'bold',
         color: '#d8a43e',
       })
       .setOrigin(0.5);
 
     this.preview = this.add
-      .image(GAME_WIDTH / 2, 242, golferAsset(this.profile.gender, 'idle'))
+      .image(GAME_WIDTH / 2, 244, golferAsset(this.profile.gender, 'idle'))
       .setOrigin(0.5, 1)
-      .setDisplaySize(96, 137);
+      .setDisplaySize(82, 117);
 
     this.addChoiceButtons();
 
     this.summary = this.add
       .text(GAME_WIDTH / 2, 354, '', {
         fontFamily: FONT_FAMILY,
-        fontSize: '10px',
+        fontSize: '9px',
         fontStyle: 'bold',
         color: '#f3e6c8',
         backgroundColor: '#24150f',
-        padding: { x: 8, y: 4 },
+        padding: { x: 7, y: 4 },
       })
       .setOrigin(0.5);
 
-    createButton(this, GAME_WIDTH / 2, 396, 182, 42, 'CONTINUE', () => {
+    createButton(this, GAME_WIDTH / 2, 397, 182, 40, 'CONTINUE', () => {
       this.confirmSelection();
     });
 
@@ -87,59 +98,61 @@ export class GolferSelectScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (Phaser.Input.Keyboard.JustDown(this.enterKey)) {
-      this.confirmSelection();
-    }
+    if (Phaser.Input.Keyboard.JustDown(this.enterKey)) this.confirmSelection();
+    if (Phaser.Input.Keyboard.JustDown(this.escapeKey)) this.scene.start(SCENES.title);
+  }
 
-    if (Phaser.Input.Keyboard.JustDown(this.escapeKey)) {
-      this.scene.start(SCENES.title);
-    }
+  private label(x: number, y: number, text: string): void {
+    this.add.text(x, y, text, {
+      fontFamily: FONT_FAMILY,
+      fontSize: '9px',
+      fontStyle: 'bold',
+      color: '#c8b899',
+    });
   }
 
   private addChoiceButtons(): void {
-    this.add
-      .text(28, 91, 'GOLFER', {
-        fontFamily: FONT_FAMILY,
+    this.label(28, 78, 'GOLFER');
+    this.genderButtons = {
+      male: createButton(this, 92, 106, 126, 34, 'MALE', () => this.setGender('male'), {
+        fillColor: COLORS.brownLight,
+        textColor: '#f3e6c8',
+        fontSize: '10px',
+      }),
+      female: createButton(this, 260, 106, 126, 34, 'FEMALE', () => this.setGender('female'), {
+        fillColor: COLORS.brownLight,
+        textColor: '#f3e6c8',
+        fontSize: '10px',
+      }),
+    };
+
+    this.label(28, 249, 'STANCE');
+    this.handednessButtons = {
+      right: createButton(this, 92, 274, 126, 34, 'RIGHT-HANDED', () => this.setHandedness('right'), {
+        fillColor: COLORS.brownLight,
+        textColor: '#f3e6c8',
         fontSize: '9px',
-        fontStyle: 'bold',
-        color: '#c8b899',
-      });
-
-    createButton(this, 92, 119, 126, 38, 'MALE', () => this.setGender('male'), {
-      fontSize: '11px',
-    });
-    createButton(this, 260, 119, 126, 38, 'FEMALE', () => this.setGender('female'), {
-      fontSize: '11px',
-    });
-
-    this.add
-      .text(28, 260, 'STANCE', {
-        fontFamily: FONT_FAMILY,
+      }),
+      left: createButton(this, 260, 274, 126, 34, 'LEFT-HANDED', () => this.setHandedness('left'), {
+        fillColor: COLORS.brownLight,
+        textColor: '#f3e6c8',
         fontSize: '9px',
-        fontStyle: 'bold',
-        color: '#c8b899',
-      });
+      }),
+    };
 
-    createButton(
-      this,
-      92,
-      289,
-      126,
-      38,
-      'RIGHT-HANDED',
-      () => this.setHandedness('right'),
-      { fillColor: COLORS.brownLight, textColor: '#f3e6c8', fontSize: '9px' },
-    );
-    createButton(
-      this,
-      260,
-      289,
-      126,
-      38,
-      'LEFT-HANDED',
-      () => this.setHandedness('left'),
-      { fillColor: COLORS.brownLight, textColor: '#f3e6c8', fontSize: '9px' },
-    );
+    this.label(28, 296, 'TEE');
+    this.teeButtons = {
+      back: createButton(this, 92, 321, 126, 34, 'BACK TEES', () => this.setTee('back'), {
+        fillColor: COLORS.brownLight,
+        textColor: '#f3e6c8',
+        fontSize: '9px',
+      }),
+      forward: createButton(this, 260, 321, 126, 34, 'FORWARD TEES', () => this.setTee('forward'), {
+        fillColor: COLORS.brownLight,
+        textColor: '#f3e6c8',
+        fontSize: '9px',
+      }),
+    };
   }
 
   private setGender(gender: GolferGender): void {
@@ -152,15 +165,25 @@ export class GolferSelectScene extends Phaser.Scene {
     this.refreshPreview();
   }
 
+  private setTee(tee: TeeChoice): void {
+    this.profile.tee = tee;
+    this.refreshPreview();
+  }
+
   private refreshPreview(): void {
     this.preview
       .setTexture(golferAsset(this.profile.gender, 'idle'))
       .setFlipX(this.profile.handedness === 'left');
-    this.summary?.setText(
-      `${profileLabel(this.profile)} · ${
-        this.profile.gender === 'female' ? 'FRONT TEES' : 'BACK TEES'
-      }`,
-    );
+    this.summary?.setText(`${profileLabel(this.profile)} · ${teeLabel(this.profile.tee)}`);
+
+    if (this.genderButtons) {
+      setButtonSelected(this.genderButtons.male, this.profile.gender === 'male');
+      setButtonSelected(this.genderButtons.female, this.profile.gender === 'female');
+      setButtonSelected(this.handednessButtons.right, this.profile.handedness === 'right');
+      setButtonSelected(this.handednessButtons.left, this.profile.handedness === 'left');
+      setButtonSelected(this.teeButtons.back, this.profile.tee === 'back');
+      setButtonSelected(this.teeButtons.forward, this.profile.tee === 'forward');
+    }
   }
 
   private confirmSelection(): void {

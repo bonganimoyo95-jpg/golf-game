@@ -2,10 +2,12 @@ import type { ClubDefinition } from './data';
 
 export type GolferGender = 'male' | 'female';
 export type Handedness = 'right' | 'left';
+export type TeeChoice = 'back' | 'forward';
 
 export interface PlayerProfile {
   gender: GolferGender;
   handedness: Handedness;
+  tee: TeeChoice;
 }
 
 export const PLAYER_PROFILE_REGISTRY_KEY = 'player-profile';
@@ -13,9 +15,8 @@ export const PLAYER_PROFILE_REGISTRY_KEY = 'player-profile';
 export const DEFAULT_PLAYER_PROFILE: Readonly<PlayerProfile> = {
   gender: 'male',
   handedness: 'right',
+  tee: 'back',
 };
-
-export const FEMALE_CLUB_DISTANCE_MULTIPLIER = 0.88;
 
 export function normalizePlayerProfile(value: unknown): PlayerProfile {
   if (typeof value !== 'object' || value === null) {
@@ -23,26 +24,30 @@ export function normalizePlayerProfile(value: unknown): PlayerProfile {
   }
 
   const candidate = value as Partial<PlayerProfile>;
+  const gender = candidate.gender === 'female' ? 'female' : 'male';
   return {
-    gender: candidate.gender === 'female' ? 'female' : 'male',
+    gender,
     handedness: candidate.handedness === 'left' ? 'left' : 'right',
+    // v0.7 profiles had no explicit tee field. Preserve their old starting tee
+    // once, while all newly saved profiles make the choice independently.
+    tee:
+      candidate.tee === 'forward' || candidate.tee === 'back'
+        ? candidate.tee
+        : gender === 'female'
+          ? 'forward'
+          : 'back',
   };
 }
 
 export function clubForProfile(
   club: ClubDefinition,
-  profile: PlayerProfile,
+  _profile: PlayerProfile,
 ): ClubDefinition {
-  if (profile.gender === 'male' || club.isPutter) {
-    return club;
-  }
+  return club;
+}
 
-  return {
-    ...club,
-    maxDistanceMetres: Math.round(
-      club.maxDistanceMetres * FEMALE_CLUB_DISTANCE_MULTIPLIER,
-    ),
-  };
+export function teeLabel(tee: TeeChoice): string {
+  return tee === 'forward' ? 'FORWARD TEES' : 'BACK TEES';
 }
 
 export function profileLabel(profile: PlayerProfile): string {
