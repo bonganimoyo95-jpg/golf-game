@@ -1,6 +1,6 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.8.0, the course, camera and QA architecture release.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.8.1, the swing-lifecycle correction following the course, camera and QA architecture release.
 
 ## What works now
 
@@ -97,7 +97,7 @@ npm run build
 
 The production website is generated in `dist/`. That folder is intentionally ignored by Git because it can be rebuilt at any time.
 
-The automated release baseline is `52` passing tests across `12` files.
+The automated release baseline is `53` passing tests across `13` files.
 
 ## QA scenario lab
 
@@ -115,6 +115,7 @@ Append `?qa=1` to the game URL, for example `http://localhost:5173/?qa=1`. The t
 - [`docs/PROJECT_1_CHECKPOINT_7.md`](docs/PROJECT_1_CHECKPOINT_7.md) — camera, flight and identity record
 - [`docs/PROJECT_1_CHECKPOINT_8.md`](docs/PROJECT_1_CHECKPOINT_8.md) — gameplay QA correction record
 - [`docs/PROJECT_2_CHECKPOINT_1.md`](docs/PROJECT_2_CHECKPOINT_1.md) — v0.8 course, camera and QA architecture record
+- [`docs/PROJECT_2_CHECKPOINT_2.md`](docs/PROJECT_2_CHECKPOINT_2.md) — paused-clock and swing-freeze correction record
 
 ## Technical choices
 

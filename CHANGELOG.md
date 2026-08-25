@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.1 — Swing lifecycle correction
+
+- Fixed a Phaser Clock pause state that survived restarting or leaving `GameScene` from the pause menu.
+- Restored the scene clock and tween manager before every restart, paused-scene exit and fresh gameplay start.
+- Prevented the golfer from freezing on the first backswing frame while the meter and buttons remained responsive.
+- Added regression coverage for restoring paused scene systems.
+- Expanded automated coverage to 53 tests across 13 files.
+
 ## 0.8.0 — Course, camera and QA architecture release
 
 - Added one authoritative course definition for bounds, tees, fairway shape, lakes, green, bunkers and pin.

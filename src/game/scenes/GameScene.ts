@@ -56,6 +56,7 @@ import {
   serializeReplay,
   type ReplaySession,
 } from '../replayLog';
+import { resumeSceneSystems } from '../sceneMotion';
 import {
   LATE_CONTACT_LIMIT,
   accuracyErrorAt,
@@ -124,6 +125,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Phaser reuses a Scene's Clock and TweenManager when the scene is
+    // restarted or started again. Always clear a paused state left behind by
+    // navigation from the pause menu before scheduling swing events.
+    this.restoreSceneMotion();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.restoreSceneMotion();
+    });
     this.profile = normalizePlayerProfile(
       this.registry.get(PLAYER_PROFILE_REGISTRY_KEY),
     );
@@ -143,7 +151,7 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.phase === 'paused') return;
     if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
-      this.scene.restart();
+      this.restartScene();
       return;
     }
 
@@ -362,7 +370,7 @@ export class GameScene extends Phaser.Scene {
       textColor: '#f3e6c8',
       fontSize: '17px',
     });
-    createButton(this, 321, 398, 60, 52, 'RESET', () => this.scene.restart(), {
+    createButton(this, 321, 398, 60, 52, 'RESET', () => this.restartScene(), {
       fillColor: COLORS.brownLight,
       hoverColor: COLORS.red,
       textColor: '#f3e6c8',
@@ -1034,7 +1042,7 @@ export class GameScene extends Phaser.Scene {
       176,
       qaMode ? 38 : 46,
       'RESTART HOLE',
-      () => this.scene.restart(),
+      () => this.restartScene(),
       {
         fillColor: COLORS.marigold,
         hoverColor: COLORS.cream,
@@ -1068,7 +1076,7 @@ export class GameScene extends Phaser.Scene {
           176,
           38,
           'QA SCENARIOS',
-          () => this.scene.start(SCENES.qa),
+          () => this.startScene(SCENES.qa),
           {
             fillColor: COLORS.marigold,
             hoverColor: COLORS.cream,
@@ -1085,7 +1093,7 @@ export class GameScene extends Phaser.Scene {
       176,
       qaMode ? 38 : 46,
       'EXIT TO TITLE',
-      () => this.scene.start(SCENES.title),
+      () => this.startScene(SCENES.title),
       {
         fillColor: COLORS.brownLight,
         hoverColor: COLORS.red,
@@ -1123,7 +1131,20 @@ export class GameScene extends Phaser.Scene {
     this.pauseObjects = [];
     this.pauseStatusText = undefined;
     this.phase = this.phaseBeforePause;
-    this.time.paused = false;
-    this.tweens.resumeAll();
+    this.restoreSceneMotion();
+  }
+
+  private restartScene(): void {
+    this.restoreSceneMotion();
+    this.scene.restart();
+  }
+
+  private startScene(sceneKey: string): void {
+    this.restoreSceneMotion();
+    this.scene.start(sceneKey);
+  }
+
+  private restoreSceneMotion(): void {
+    resumeSceneSystems(this.time, this.tweens);
   }
 }
