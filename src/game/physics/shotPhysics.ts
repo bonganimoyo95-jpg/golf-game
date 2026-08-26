@@ -36,6 +36,8 @@ export interface ShotResult {
   totalMetres: number;
   power: number;
   accuracyError: number;
+  contactQuality: number;
+  carryBonusMetres: number;
   aimDegrees: number;
   launchDirectionDegrees: number;
   peakHeightMetres: number;
@@ -62,6 +64,14 @@ function clamp(value: number, minimum: number, maximum: number): number {
 const PUTT_STARTING_DISTANCE_SHARE = 0.01;
 const PUTT_POWER_DISTANCE_SHARE = 0.99;
 const PUTT_POWER_EXPONENT = 1.55;
+export const PURE_CONTACT_WINDOW = 0.12;
+export const MAX_PURE_CONTACT_CARRY_BONUS = 0.03;
+
+export function contactQualityForAccuracy(accuracyErrorValue: number): number {
+  const accuracyError = Math.abs(clamp(accuracyErrorValue, -1, 1));
+  const proximity = clamp(1 - accuracyError / PURE_CONTACT_WINDOW, 0, 1);
+  return proximity * proximity * (3 - 2 * proximity);
+}
 
 export function putterRolloutForPower(
   club: ClubDefinition,
@@ -207,6 +217,7 @@ function resolvePenalty(
 export function calculateShot(input: ShotInput): ShotResult {
   const power = clamp(input.power, input.club.isPutter ? 0.03 : 0.15, 1);
   const accuracyError = clamp(input.accuracyError, -1, 1);
+  const contactQuality = contactQualityForAccuracy(accuracyError);
   const lieTuning = LIE_TUNING[input.startingLie];
   const launchDirectionDegrees =
     input.aimDegrees +
@@ -252,6 +263,8 @@ export function calculateShot(input: ShotInput): ShotResult {
       totalMetres: distanceBetween(input.start, visualEnd),
       power,
       accuracyError,
+      contactQuality,
+      carryBonusMetres: 0,
       aimDegrees: input.aimDegrees,
       launchDirectionDegrees,
       peakHeightMetres: 0,
@@ -268,8 +281,11 @@ export function calculateShot(input: ShotInput): ShotResult {
   }
 
   const powerDistanceScale = 0.32 + power * 0.68;
-  const carryMetres =
+  const carryWithoutContactBonus =
     input.club.maxDistanceMetres * powerDistanceScale * lieTuning.distanceMultiplier;
+  const carryBonusMetres =
+    carryWithoutContactBonus * MAX_PURE_CONTACT_CARRY_BONUS * contactQuality;
+  const carryMetres = carryWithoutContactBonus + carryBonusMetres;
   const flightSeconds = input.club.flightSeconds * (0.72 + power * 0.28);
   const windDirection = directionVector(input.wind.bearingDegrees);
   const windDriftMetres =
@@ -311,6 +327,8 @@ export function calculateShot(input: ShotInput): ShotResult {
     totalMetres: distanceBetween(input.start, visualEnd),
     power,
     accuracyError,
+    contactQuality,
+    carryBonusMetres,
     aimDegrees: input.aimDegrees,
     launchDirectionDegrees,
     peakHeightMetres: input.club.peakHeightMetres * (0.55 + power * 0.45),

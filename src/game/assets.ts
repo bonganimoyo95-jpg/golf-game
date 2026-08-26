@@ -14,8 +14,8 @@ export const GOLFER_POSES = [
   'impact',
   'follow-through',
   'watch',
-  'putt-address',
-  'putt-stroke',
+  'putt-forward-address',
+  'putt-forward-stroke',
   'celebrate',
   'neutral',
 ] as const;

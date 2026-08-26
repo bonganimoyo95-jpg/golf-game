@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { CLUBS, PROTOTYPE_HOLE } from './data';
 import {
   COURSE_VIEW_CENTRE_X,
+  PUTTING_BALL_SCREEN_POSITION,
   ballAddressScreenX,
   bearingToPinFrom,
   courseViewStage,
   projectWorldToCourseView,
   puttingAimTargetScreenPosition,
+  puttingCupScreenPosition,
+  puttingGolferScreenX,
   puttingRollScreenPosition,
+  puttingTargetScale,
   shotBallScreenPosition,
   shotCameraTravelMetres,
 } from './cameraModel';
@@ -83,25 +87,41 @@ describe('position-aware course camera', () => {
 });
 
 describe('putting camera model', () => {
-  const rightBall = { x: 132, y: 329 };
-  const rightCup = { x: 329, y: 329 };
-  const leftBall = { x: 220, y: 329 };
-  const leftCup = { x: 23, y: 329 };
+  const ball = PUTTING_BALL_SCREEN_POSITION;
+  const cup = puttingCupScreenPosition(10);
 
-  it('keeps the physical cup fixed while the aim line moves', () => {
-    const straight = puttingAimTargetScreenPosition(rightBall, rightCup, 0);
-    const aimed = puttingAimTargetScreenPosition(rightBall, rightCup, 4);
-
-    expect(straight).toEqual(rightCup);
-    expect(aimed.x).toBe(rightCup.x);
-    expect(aimed.y).not.toBe(rightCup.y);
+  it('places the ball and cup on one forward-facing centre line', () => {
+    expect(ball.x).toBe(COURSE_VIEW_CENTRE_X);
+    expect(cup.x).toBe(COURSE_VIEW_CENTRE_X);
+    expect(cup.y).toBeLessThan(ball.y);
   });
 
-  it('mirrors putt direction for left-handed play', () => {
-    const right = puttingRollScreenPosition(rightBall, rightCup, 0.8, 3);
-    const left = puttingRollScreenPosition(leftBall, leftCup, 0.8, 3);
+  it('moves only the golfer stance when handedness changes', () => {
+    const rightGolfer = puttingGolferScreenX('right');
+    const leftGolfer = puttingGolferScreenX('left');
 
-    expect(right.x).toBe(352 - left.x);
-    expect(right.y + left.y).toBeCloseTo(658);
+    expect(rightGolfer).toBeLessThan(ball.x);
+    expect(leftGolfer).toBeGreaterThan(ball.x);
+    expect(ball.x - rightGolfer).toBe(leftGolfer - ball.x);
+  });
+
+  it('keeps the physical cup fixed while the aim line pivots', () => {
+    const straight = puttingAimTargetScreenPosition(ball, cup, 0);
+    const aimed = puttingAimTargetScreenPosition(ball, cup, 4);
+
+    expect(straight).toEqual(cup);
+    expect(aimed.x).not.toBe(cup.x);
+    expect(aimed.y).toBe(cup.y);
+  });
+
+  it('rolls straight up-screen and shows farther cups deeper in perspective', () => {
+    const roll = puttingRollScreenPosition(ball, cup, 0.8, 0);
+    const nearCup = puttingCupScreenPosition(2);
+    const farCup = puttingCupScreenPosition(20);
+
+    expect(roll.x).toBe(COURSE_VIEW_CENTRE_X);
+    expect(roll.y).toBeLessThan(ball.y);
+    expect(farCup.y).toBeLessThan(nearCup.y);
+    expect(puttingTargetScale(20)).toBeLessThan(puttingTargetScale(2));
   });
 });

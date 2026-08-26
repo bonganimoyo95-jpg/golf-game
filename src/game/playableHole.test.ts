@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { PIN_POSITION, TEE_POSITION } from './courseModel';
+import { PIN_POSITION, TEE_POSITION, distanceBetween } from './courseModel';
 import { CLUBS, PROTOTYPE_HOLE, type Lie } from './data';
-import { calculateShot, type ShotResult } from './physics/shotPhysics';
+import {
+  calculateShot,
+  putterPowerForDistance,
+  type ShotResult,
+} from './physics/shotPhysics';
 
 function takeShot(
   start: ShotResult['resolvedEnd'],
@@ -33,7 +37,18 @@ describe('playable hole', () => {
       ) *
         180) /
       Math.PI;
-    const putt = takeShot(wedge.resolvedEnd, wedge.finalLie, 3, 0.78, bearingToCup);
+    const puttPower = putterPowerForDistance(
+      CLUBS[3],
+      distanceBetween(wedge.resolvedEnd, PIN_POSITION),
+      'green',
+    );
+    const putt = takeShot(
+      wedge.resolvedEnd,
+      wedge.finalLie,
+      3,
+      puttPower,
+      bearingToCup,
+    );
 
     expect(drive.penalty).toBe(false);
     expect(approach.start).toEqual(drive.resolvedEnd);

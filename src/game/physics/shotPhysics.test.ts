@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { CLUBS, PROTOTYPE_HOLE } from '../data';
 import { TEE_POSITION, getLieAt } from '../courseModel';
 import {
+  MAX_PURE_CONTACT_CARRY_BONUS,
   calculateShot,
+  contactQualityForAccuracy,
   putterPowerForDistance,
   putterRolloutForPower,
   sampleTrajectory,
@@ -40,6 +42,45 @@ describe('shot physics', () => {
     const left = calculateShot({ ...baseInput, accuracyError: -0.7 });
     const right = calculateShot({ ...baseInput, accuracyError: 0.7 });
     expect(right.visualEnd.x).toBeGreaterThan(left.visualEnd.x);
+  });
+
+  it('awards a capped three-percent carry bonus for pure full-swing contact', () => {
+    const pure = calculateShot(baseInput);
+    const outsideWindow = calculateShot({
+      ...baseInput,
+      accuracyError: 0.12,
+    });
+
+    expect(pure.carryBonusMetres).toBeCloseTo(
+      CLUBS[0].maxDistanceMetres * MAX_PURE_CONTACT_CARRY_BONUS,
+      5,
+    );
+    expect(pure.carryMetres).toBeGreaterThan(outsideWindow.carryMetres);
+    expect(outsideWindow.carryBonusMetres).toBe(0);
+  });
+
+  it('tapers the contact bonus smoothly instead of using a one-pixel threshold', () => {
+    const pure = contactQualityForAccuracy(0);
+    const near = contactQualityForAccuracy(0.06);
+    const miss = contactQualityForAccuracy(0.12);
+
+    expect(pure).toBe(1);
+    expect(near).toBeGreaterThan(0);
+    expect(near).toBeLessThan(pure);
+    expect(miss).toBe(0);
+  });
+
+  it('does not add hidden distance to putts', () => {
+    const putt = calculateShot({
+      ...baseInput,
+      start: { x: 0, y: 382 },
+      club: CLUBS[3],
+      power: 0.49,
+      startingLie: 'green',
+    });
+
+    expect(putt.contactQuality).toBe(1);
+    expect(putt.carryBonusMetres).toBe(0);
   });
 
   it('reduces distance from the rough', () => {

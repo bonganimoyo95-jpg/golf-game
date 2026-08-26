@@ -241,12 +241,132 @@ function drawPerspectiveSurface(
 
   if (surface.lie === 'water') {
     graphics.lineStyle(1, COLORS.cream, 0.24);
-    graphics.lineBetween(
-      projected.x - width * 0.3,
-      projected.y,
-      projected.x + width * 0.22,
-      projected.y,
+    for (const [offset, startShare, endShare] of [
+      [-2, -0.3, 0.2],
+      [0, -0.18, 0.32],
+      [2, -0.36, 0.08],
+    ] as const) {
+      graphics.lineBetween(
+        projected.x + width * startShare,
+        projected.y + offset * projected.scale,
+        projected.x + width * endShare,
+        projected.y + offset * projected.scale,
+      );
+    }
+  } else if (surface.lie === 'bunker') {
+    graphics.fillStyle(COLORS.cream, 0.3);
+    for (const [xShare, yShare] of [
+      [-0.22, -0.08],
+      [0.02, 0.12],
+      [0.25, -0.02],
+    ] as const) {
+      graphics.fillCircle(
+        projected.x + width * xShare,
+        projected.y + height * yShare,
+        Math.max(0.6, projected.scale),
+      );
+    }
+  }
+}
+
+function drawPineSilhouette(
+  graphics: Phaser.GameObjects.Graphics,
+  x: number,
+  baseY: number,
+  height: number,
+  color: number,
+  alpha: number,
+): void {
+  const width = height * 0.46;
+  graphics.fillStyle(COLORS.tobacco, alpha * 0.72);
+  graphics.fillRect(x - 1, baseY - height * 0.46, 2, height * 0.46);
+  graphics.fillStyle(color, alpha);
+  graphics.fillTriangle(
+    x,
+    baseY - height,
+    x - width * 0.34,
+    baseY - height * 0.54,
+    x + width * 0.34,
+    baseY - height * 0.54,
+  );
+  graphics.fillTriangle(
+    x,
+    baseY - height * 0.8,
+    x - width * 0.46,
+    baseY - height * 0.27,
+    x + width * 0.46,
+    baseY - height * 0.27,
+  );
+  graphics.fillTriangle(
+    x,
+    baseY - height * 0.57,
+    x - width * 0.58,
+    baseY,
+    x + width * 0.58,
+    baseY,
+  );
+}
+
+function drawCourseHorizon(graphics: Phaser.GameObjects.Graphics): void {
+  graphics.fillStyle(COLORS.fairwayLight, 0.18);
+  graphics.fillRect(
+    COURSE_VIEW_LEFT,
+    COURSE_VIEW_HORIZON_Y - 4,
+    COURSE_VIEW_WIDTH,
+    5,
+  );
+
+  const distantTrees = [
+    [18, 27],
+    [38, 34],
+    [60, 25],
+    [82, 38],
+    [105, 29],
+    [247, 29],
+    [270, 38],
+    [293, 26],
+    [315, 34],
+    [337, 28],
+  ] as const;
+  for (const [relativeX, height] of distantTrees) {
+    drawPineSilhouette(
+      graphics,
+      COURSE_VIEW_LEFT + relativeX,
+      COURSE_VIEW_HORIZON_Y + 2,
+      height,
+      COLORS.rough,
+      0.78,
     );
+  }
+
+  const foregroundTrees = [
+    [7, 47],
+    [30, 42],
+    [326, 43],
+    [345, 49],
+  ] as const;
+  for (const [relativeX, height] of foregroundTrees) {
+    drawPineSilhouette(
+      graphics,
+      COURSE_VIEW_LEFT + relativeX,
+      COURSE_VIEW_HORIZON_Y + 4,
+      height,
+      COLORS.espresso,
+      0.92,
+    );
+  }
+
+  // Small cream and blush clusters suggest dogwood colour without copying a
+  // photographed or branded course asset.
+  for (const [x, y, color] of [
+    [45, 252, COLORS.cream],
+    [52, 255, 0xe1aaa1],
+    [300, 253, COLORS.cream],
+    [307, 250, 0xe1aaa1],
+  ] as const) {
+    graphics.fillStyle(color, 0.78);
+    graphics.fillCircle(COURSE_VIEW_LEFT + x, y, 2);
+    graphics.fillCircle(COURSE_VIEW_LEFT + x + 4, y + 1, 1.5);
   }
 }
 
@@ -293,7 +413,7 @@ export function drawCoursePerspective(
   graphics.fillStyle(COLORS.cream, 0.13);
   graphics.fillCircle(COURSE_VIEW_LEFT + 265, COURSE_VIEW_TOP + 22, 13);
 
-  graphics.fillStyle(COLORS.tobacco, 0.62);
+  graphics.fillStyle(COLORS.tobacco, 0.5);
   graphics.fillPoints(
     [
       { x: COURSE_VIEW_LEFT, y: COURSE_VIEW_HORIZON_Y },
@@ -306,6 +426,7 @@ export function drawCoursePerspective(
     ],
     true,
   );
+  drawCourseHorizon(graphics);
   graphics.fillStyle(COLORS.rough, 1);
   graphics.fillRect(
     COURSE_VIEW_LEFT,

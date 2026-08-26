@@ -2,11 +2,18 @@ import Phaser from 'phaser';
 import { golferAsset, type GolferPose } from '../assets';
 import {
   COURSE_VIEW_CENTRE_X,
+  COURSE_VIEW_HORIZON_Y,
+  COURSE_VIEW_LEFT,
+  COURSE_VIEW_WIDTH,
   LANDSCAPE_GROUND_Y,
+  PUTTING_BALL_SCREEN_POSITION,
   ballAddressScreenX,
   courseViewStage,
   puttingAimTargetScreenPosition,
+  puttingCupScreenPosition,
+  puttingGolferScreenX,
   puttingRollScreenPosition,
+  puttingTargetScale,
   shotCameraForSample,
   shotBallScreenPosition,
 } from '../cameraModel';
@@ -57,6 +64,13 @@ import {
   type ReplaySession,
 } from '../replayLog';
 import { resumeSceneSystems } from '../sceneMotion';
+import {
+  SWING_LAUNCH_TIME_MS,
+  swingDurationMs,
+  swingVisualStateAt,
+  type SwingAnimationKind,
+  type SwingVisualState,
+} from '../swingAnimation';
 import {
   LATE_CONTACT_LIMIT,
   accuracyErrorAt,
@@ -113,6 +127,7 @@ export class GameScene extends Phaser.Scene {
   private aimGraphics!: Phaser.GameObjects.Graphics;
   private meterGraphics!: Phaser.GameObjects.Graphics;
   private environmentGraphics!: Phaser.GameObjects.Graphics;
+  private puttingForegroundGraphics!: Phaser.GameObjects.Graphics;
   private golferSprite!: Phaser.GameObjects.Image;
   private mapBall!: Phaser.GameObjects.Arc;
   private flightBall!: Phaser.GameObjects.Arc;
@@ -271,6 +286,7 @@ export class GameScene extends Phaser.Scene {
     this.environmentGraphics = this.add.graphics().setDepth(2);
     this.aimGraphics = this.add.graphics().setDepth(5);
     this.meterGraphics = this.add.graphics().setDepth(5);
+    this.puttingForegroundGraphics = this.add.graphics().setDepth(9);
 
     const startOnMap = worldToMap(this.ballPosition);
     this.mapBall = this.add
@@ -469,10 +485,16 @@ export class GameScene extends Phaser.Scene {
     );
     this.meterPosition = 0;
     this.selectedPower = 0;
-    this.setupBall.setPosition(this.ballScreenX(), GROUND_Y).setVisible(true);
-    this.flightBall.setVisible(false);
+    this.setupBall
+      .setPosition(this.ballScreenX(), GROUND_Y)
+      .setScale(1)
+      .setAlpha(1)
+      .setVisible(true);
+    this.flightBall.setScale(1).setAlpha(1).setVisible(false);
     this.golferSprite.setAlpha(1).setVisible(true);
-    this.setGolferPose(this.currentLie === 'green' ? 'putt-address' : 'address');
+    this.setGolferPose(
+      this.currentLie === 'green' ? 'putt-forward-address' : 'address',
+    );
     this.drawPlayingEnvironment(
       this.ballPosition,
       this.currentLie === 'green' ? this.bearingToPin() : this.shotAimDegrees(),
@@ -545,26 +567,64 @@ export class GameScene extends Phaser.Scene {
     cameraLie: Lie,
     showPuttingLine: boolean,
   ): void {
+    this.puttingForegroundGraphics.clear();
     drawCoursePerspective(this.environmentGraphics, {
       camera: { position: cameraPosition, bearingDegrees },
       currentLie: cameraLie,
     });
 
     if (!showPuttingLine) return;
-    const left = 9;
-    const width = 334;
-    this.environmentGraphics.fillStyle(COLORS.green, 0.88);
-    this.environmentGraphics.fillRect(left, 286, width, 65);
-    this.environmentGraphics.fillStyle(COLORS.fairwayLight, 0.2);
-    for (let x = left; x < left + width; x += 34) {
-      this.environmentGraphics.fillRect(x, 286, 17, 65);
+    const left = COURSE_VIEW_LEFT + 1;
+    const top = COURSE_VIEW_HORIZON_Y + 1;
+    const width = COURSE_VIEW_WIDTH - 2;
+    const bottom = 351;
+    const centreX = COURSE_VIEW_CENTRE_X;
+    this.environmentGraphics.fillStyle(COLORS.green, 0.96);
+    this.environmentGraphics.fillRect(left, top, width, bottom - top);
+
+    // Alternating trapezoids converge toward the target to make the green read
+    // as a forward-facing plane without requiring a 3D renderer.
+    const stripeWidth = width / 8;
+    this.environmentGraphics.fillStyle(COLORS.fairwayLight, 0.13);
+    for (let stripe = 0; stripe < 8; stripe += 2) {
+      const bottomLeft = left + stripe * stripeWidth;
+      const bottomRight = bottomLeft + stripeWidth;
+      this.environmentGraphics.fillPoints(
+        [
+          {
+            x: centreX + (bottomLeft - centreX) * 0.08,
+            y: top,
+          },
+          {
+            x: centreX + (bottomRight - centreX) * 0.08,
+            y: top,
+          },
+          { x: bottomRight, y: bottom },
+          { x: bottomLeft, y: bottom },
+        ],
+        true,
+      );
+    }
+
+    this.environmentGraphics.lineStyle(1, COLORS.cream, 0.12);
+    for (let band = 1; band <= 4; band += 1) {
+      const share = band / 5;
+      const y = top + (bottom - top) * Math.pow(share, 1.45);
+      const halfWidth = width * (0.06 + share * 0.44);
+      this.environmentGraphics.lineBetween(
+        centreX - halfWidth,
+        y,
+        centreX + halfWidth,
+        y,
+      );
     }
     this.drawPuttingLineAndCup();
   }
 
   private drawPuttingLineAndCup(): void {
-    const ball = { x: this.ballScreenX(), y: GROUND_Y };
-    const cup = { x: this.cupScreenX(), y: this.cupScreenY() };
+    const ball = PUTTING_BALL_SCREEN_POSITION;
+    const cup = this.cupScreenPosition();
+    const targetScale = this.cupScreenScale();
     const aimTarget = puttingAimTargetScreenPosition(ball, cup, this.aimDegrees);
     this.environmentGraphics.lineStyle(5, COLORS.espresso, 0.32);
     this.environmentGraphics.lineBetween(ball.x, ball.y, aimTarget.x, aimTarget.y);
@@ -575,18 +635,37 @@ export class GameScene extends Phaser.Scene {
       this.environmentGraphics.fillCircle(aimTarget.x, aimTarget.y, 3);
     }
     this.environmentGraphics.fillStyle(COLORS.black, 1);
-    this.environmentGraphics.fillEllipse(cup.x, cup.y, 13, 5);
-    this.environmentGraphics.lineStyle(2, COLORS.cream, 1);
-    this.environmentGraphics.lineBetween(cup.x, cup.y, cup.x, cup.y - 42);
+    const cupWidth = 14 * targetScale;
+    const cupHeight = Math.max(3, 5 * targetScale);
+    const flagHeight = 42 * targetScale;
+    this.environmentGraphics.fillEllipse(cup.x, cup.y, cupWidth, cupHeight);
+    this.environmentGraphics.lineStyle(Math.max(1, 2 * targetScale), COLORS.cream, 1);
+    this.environmentGraphics.lineBetween(cup.x, cup.y, cup.x, cup.y - flagHeight);
     this.environmentGraphics.fillStyle(COLORS.orange, 1);
-    const flagDirection = this.profile.handedness === 'right' ? -1 : 1;
     this.environmentGraphics.fillTriangle(
       cup.x,
-      cup.y - 42,
-      cup.x + flagDirection * 25,
-      cup.y - 33,
+      cup.y - flagHeight,
+      cup.x + 25 * targetScale,
+      cup.y - 33 * targetScale,
       cup.x,
-      cup.y - 25,
+      cup.y - 25 * targetScale,
+    );
+
+    // This small foreground patch becomes the cup's front lip. The ball moves
+    // behind it during the sink tween instead of remaining painted on top.
+    this.puttingForegroundGraphics.fillStyle(COLORS.green, 1);
+    this.puttingForegroundGraphics.fillRect(
+      cup.x - cupWidth / 2 - 1,
+      cup.y,
+      cupWidth + 2,
+      cupHeight + 2,
+    );
+    this.puttingForegroundGraphics.lineStyle(1, COLORS.fairwayLight, 0.72);
+    this.puttingForegroundGraphics.lineBetween(
+      cup.x - cupWidth / 2,
+      cup.y,
+      cup.x + cupWidth / 2,
+      cup.y,
     );
   }
 
@@ -740,39 +819,77 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'result';
     this.strokeCount += result.strokeCost;
     this.statusText.setText(`SHOT ${this.strokeCount}`);
-    this.instructionText.setText(
-      Math.abs(accuracyError) < 0.12
-        ? 'PERFECT CONTACT!'
-        : accuracyError > 0
-          ? 'EARLY CONTACT!'
-          : 'LATE CONTACT!',
-    );
+    this.instructionText.setText(this.contactFeedback(result));
     this.aimGraphics.clear();
     this.setupBall.setVisible(false);
     this.playGolferSwing(result);
   }
 
-  private playGolferSwing(result: ShotResult): void {
-    if (result.club.isPutter) {
-      this.setGolferPose('putt-address');
-      this.time.delayedCall(220, () => this.setGolferPose('putt-stroke'));
-      this.time.delayedCall(430, () => this.launchCalculatedShot(result));
-      return;
+  private contactFeedback(result: ShotResult): string {
+    if (Math.abs(result.accuracyError) < 0.12) {
+      if (result.club.isPutter) return 'PURE ROLL!';
+      if (result.carryBonusMetres >= 0.25) {
+        const decimals = result.carryBonusMetres < 1 ? 1 : 0;
+        return `PURE CONTACT · +${result.carryBonusMetres.toFixed(decimals)} M`;
+      }
+      return 'PURE CONTACT!';
     }
-    this.setGolferPose('backswing');
-    this.time.delayedCall(300, () => this.setGolferPose('top'));
-    this.time.delayedCall(640, () => this.setGolferPose('downswing'));
-    this.time.delayedCall(930, () => {
-      this.setGolferPose('impact');
-      this.launchCalculatedShot(result);
+    return result.accuracyError > 0 ? 'EARLY CONTACT!' : 'LATE CONTACT!';
+  }
+
+  private playGolferSwing(result: ShotResult): void {
+    const kind: SwingAnimationKind = result.club.isPutter ? 'putt' : 'full';
+    const duration = swingDurationMs(kind);
+    const animationClock = { elapsedMs: 0 };
+    let activePose: GolferPose | undefined;
+    let launched = false;
+
+    const renderSwing = (): void => {
+      const visualState = swingVisualStateAt(kind, animationClock.elapsedMs);
+      if (visualState.pose !== activePose) {
+        activePose = visualState.pose;
+        this.setGolferPose(visualState.pose);
+      }
+      this.applyGolferRootMotion(visualState);
+      if (!launched && animationClock.elapsedMs >= SWING_LAUNCH_TIME_MS[kind]) {
+        launched = true;
+        this.launchCalculatedShot(result);
+      }
+    };
+
+    this.tweens.add({
+      targets: animationClock,
+      elapsedMs: duration,
+      duration,
+      ease: 'Linear',
+      onStart: renderSwing,
+      onUpdate: renderSwing,
+      onComplete: () => {
+        animationClock.elapsedMs = duration;
+        renderSwing();
+      },
     });
-    this.time.delayedCall(1130, () => this.setGolferPose('follow-through'));
+  }
+
+  private applyGolferRootMotion(state: SwingVisualState): void {
+    const mirror = this.profile.handedness === 'left' ? -1 : 1;
+    this.golferSprite
+      .setPosition(
+        this.golferScreenX() + state.xOffset * mirror,
+        348 + state.yOffset,
+      )
+      .setAngle(state.angleDegrees * mirror)
+      .setDisplaySize(96 * state.scale, 137 * state.scale);
   }
 
   private launchCalculatedShot(result: ShotResult): void {
     const screenEnd = this.puttingResultScreenPosition(result);
     const startX = this.ballScreenX();
-    this.flightBall.setPosition(startX, GROUND_Y).setVisible(true);
+    this.flightBall
+      .setPosition(startX, GROUND_Y)
+      .setScale(1)
+      .setAlpha(1)
+      .setVisible(true);
     const animation = { progress: 0 };
     this.tweens.add({
       targets: animation,
@@ -823,30 +940,55 @@ export class GameScene extends Phaser.Scene {
           this.flightBall.setPosition(finalScreen.x, finalScreen.y).setVisible(true);
           this.golferSprite.setAlpha(1).setVisible(false);
         }
+        if (result.club.isPutter && result.holed) {
+          this.animateBallIntoCup(result);
+          return;
+        }
         this.resolveCalculatedShot(result);
       },
     });
   }
 
   private puttingResultScreenPosition(result: ShotResult): WorldPosition {
-    if (result.holed) return { x: this.cupScreenX(), y: this.cupScreenY() };
     const distanceFromCup = distanceToPin(result.start);
+    const cup = this.cupScreenPosition(result.start);
+    if (result.holed) return cup;
     const distanceRatio = distanceFromCup > 0 ? result.totalMetres / distanceFromCup : 1;
     const relativeAim = this.normalizedDegrees(
       result.launchDirectionDegrees - this.bearingToPinFrom(result.start),
     );
     return puttingRollScreenPosition(
-      { x: this.ballScreenX(), y: GROUND_Y },
-      { x: this.cupScreenX(), y: this.cupScreenY() },
+      PUTTING_BALL_SCREEN_POSITION,
+      cup,
       distanceRatio,
       relativeAim,
     );
   }
 
+  private animateBallIntoCup(result: ShotResult): void {
+    const cup = this.cupScreenPosition(result.start);
+    this.instructionText.setText('DROPS...');
+    this.meterLabel.setText('CUP');
+    this.tweens.add({
+      targets: this.flightBall,
+      x: cup.x,
+      y: cup.y + 4,
+      scaleX: 0.18,
+      scaleY: 0.18,
+      alpha: 0,
+      duration: 230,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        this.flightBall.setVisible(false);
+        this.resolveCalculatedShot(result);
+      },
+    });
+  }
+
   private resolveCalculatedShot(result: ShotResult): void {
     this.ballPosition = { ...result.resolvedEnd };
     this.currentLie = result.resolvedLie;
-    if (result.penalty) this.flightBall.setVisible(false);
+    if (result.penalty || result.holed) this.flightBall.setVisible(false);
     const resolvedMapPosition = worldToMap(this.ballPosition);
     this.mapBall.setPosition(resolvedMapPosition.x, resolvedMapPosition.y);
     this.distanceText.setText(
@@ -946,25 +1088,32 @@ export class GameScene extends Phaser.Scene {
     this.golferSprite
       .setTexture(golferAsset(this.profile.gender, pose))
       .setPosition(this.golferScreenX(), 348)
+      .setAngle(0)
       .setDisplaySize(96, 137)
       .setFlipX(this.profile.handedness === 'left')
       .setVisible(true);
   }
 
   private golferScreenX(): number {
-    return this.profile.handedness === 'right' ? 84 : 268;
+    return this.currentLie === 'green'
+      ? puttingGolferScreenX(this.profile.handedness)
+      : this.profile.handedness === 'right'
+        ? 84
+        : 268;
   }
 
   private ballScreenX(): number {
-    return ballAddressScreenX(this.profile.handedness);
+    return this.currentLie === 'green'
+      ? PUTTING_BALL_SCREEN_POSITION.x
+      : ballAddressScreenX(this.profile.handedness);
   }
 
-  private cupScreenX(): number {
-    return this.profile.handedness === 'right' ? 329 : 23;
+  private cupScreenPosition(position: WorldPosition = this.ballPosition): WorldPosition {
+    return puttingCupScreenPosition(distanceToPin(position));
   }
 
-  private cupScreenY(): number {
-    return GROUND_Y;
+  private cupScreenScale(position: WorldPosition = this.ballPosition): number {
+    return puttingTargetScale(distanceToPin(position));
   }
 
   private suggestedPuttPower(): number {

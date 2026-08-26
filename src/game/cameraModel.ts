@@ -33,6 +33,10 @@ export const COURSE_VIEW_HEIGHT = 151;
 export const COURSE_VIEW_CENTRE_X = COURSE_VIEW_LEFT + COURSE_VIEW_WIDTH / 2;
 export const COURSE_VIEW_HORIZON_Y = 257;
 export const LANDSCAPE_GROUND_Y = 329;
+export const PUTTING_BALL_SCREEN_POSITION: Readonly<ScreenPoint> = {
+  x: COURSE_VIEW_CENTRE_X,
+  y: LANDSCAPE_GROUND_Y,
+};
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));
@@ -156,6 +160,30 @@ export function ballAddressScreenX(handedness: Handedness): number {
   return handedness === 'right' ? 132 : 220;
 }
 
+/**
+ * Putting uses a down-the-line camera. Handedness changes which side of the
+ * centred ball the golfer occupies; it never changes where the cup appears.
+ */
+export function puttingGolferScreenX(handedness: Handedness): number {
+  return handedness === 'right'
+    ? COURSE_VIEW_CENTRE_X - 42
+    : COURSE_VIEW_CENTRE_X + 42;
+}
+
+export function puttingCupScreenPosition(distanceMetres: number): ScreenPoint {
+  const distanceShare = clamp(distanceMetres / 25, 0, 1);
+  const forwardPixels = 12 + Math.sqrt(distanceShare) * 55;
+  return {
+    x: COURSE_VIEW_CENTRE_X,
+    y: LANDSCAPE_GROUND_Y - forwardPixels,
+  };
+}
+
+export function puttingTargetScale(distanceMetres: number): number {
+  const distanceShare = clamp(distanceMetres / 25, 0, 1);
+  return 1 - Math.sqrt(distanceShare) * 0.34;
+}
+
 export function shotBallScreenPosition(
   result: ShotResult,
   sample: TrajectoryPoint,
@@ -187,9 +215,14 @@ export function puttingAimTargetScreenPosition(
   relativeAimDegrees: number,
 ): ScreenPoint {
   const radians = (relativeAimDegrees * Math.PI) / 180;
+  const forwardPixels = Math.max(1, ball.y - cup.y);
   return {
-    x: cup.x,
-    y: clamp(ball.y + (cup.x - ball.x) * Math.tan(radians), 286, 350),
+    x: clamp(
+      ball.x + forwardPixels * Math.tan(radians),
+      COURSE_VIEW_LEFT + 4,
+      COURSE_VIEW_LEFT + COURSE_VIEW_WIDTH - 4,
+    ),
+    y: cup.y,
   };
 }
 
@@ -199,14 +232,19 @@ export function puttingRollScreenPosition(
   distanceRatio: number,
   relativeAimDegrees: number,
 ): ScreenPoint {
-  const availablePixels = Math.abs(cup.x - ball.x);
-  const direction = cup.x >= ball.x ? 1 : -1;
-  const travelPixels = availablePixels * clamp(distanceRatio, 0, 1.28);
-  const x = clamp(ball.x + direction * travelPixels, 11, 341);
-  const radians = (relativeAimDegrees * Math.PI) / 180;
+  const target = puttingAimTargetScreenPosition(ball, cup, relativeAimDegrees);
+  const travelShare = clamp(distanceRatio, 0, 1.28);
 
   return {
-    x,
-    y: clamp(ball.y + (x - ball.x) * Math.tan(radians), 286, 350),
+    x: clamp(
+      ball.x + (target.x - ball.x) * travelShare,
+      COURSE_VIEW_LEFT + 3,
+      COURSE_VIEW_LEFT + COURSE_VIEW_WIDTH - 3,
+    ),
+    y: clamp(
+      ball.y + (target.y - ball.y) * travelShare,
+      COURSE_VIEW_HORIZON_Y + 3,
+      LANDSCAPE_GROUND_Y,
+    ),
   };
 }

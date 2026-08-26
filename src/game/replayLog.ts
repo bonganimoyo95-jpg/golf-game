@@ -42,7 +42,7 @@ export interface ReplayShotRecord {
 
 export interface ReplaySession {
   formatVersion: 1;
-  gameVersion: '0.8.0' | '0.8.1';
+  gameVersion: '0.8.0' | '0.8.1' | '0.9.0';
   courseId: string;
   profile: PlayerProfile;
   scenarioId?: string;
@@ -87,7 +87,7 @@ export function createReplaySession(
 ): ReplaySession {
   return {
     formatVersion: 1,
-    gameVersion: '0.8.1',
+    gameVersion: '0.9.0',
     courseId: COURSE_DEFINITION.id,
     profile: { ...profile },
     scenarioId,
@@ -135,7 +135,9 @@ export function parseReplay(serialized: string): ReplaySession | undefined {
     const value = JSON.parse(serialized) as Partial<ReplaySession>;
     if (
       value.formatVersion !== 1 ||
-      (value.gameVersion !== '0.8.0' && value.gameVersion !== '0.8.1') ||
+      (value.gameVersion !== '0.8.0' &&
+        value.gameVersion !== '0.8.1' &&
+        value.gameVersion !== '0.9.0') ||
       value.courseId !== COURSE_DEFINITION.id ||
       !Array.isArray(value.shots) ||
       typeof value.profile !== 'object' ||
