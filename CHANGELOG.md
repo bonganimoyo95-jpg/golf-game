@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0 — Putting perspective and game feel
+
+- Rebuilt putting around a down-the-line camera with the ball and cup on one centred forward axis.
+- Made handedness move only the golfer's stance while keeping the cup, flag and physical target fixed.
+- Added distance-scaled cup depth, perspective mowing lines and new rear three-quarter putting poses for both golfers.
+- Added a cup-front depth layer and a short sink animation before hole completion.
+- Replaced independent swing delay calls with one continuous, pause-safe 800 ms visual timeline.
+- Moved full-swing impact and ball launch from 930 ms to a more natural 520 ms while preserving the held finish.
+- Added subtle interpolated golfer root motion between existing full-swing poses.
+- Added a smooth, capped three-percent carry reward for pure contact and explicit bonus feedback.
+- Kept putter distance free of hidden contact bonuses so suggested power remains honest.
+- Added an Augusta-11-inspired procedural presentation pass with pine framing, dogwood colour and richer water and bunker treatment.
+- Added dedicated regression coverage for putting composition, target depth, pure-contact tuning and swing timing.
+- Expanded automated coverage to 61 tests across 14 files.
+
 ## 0.8.1 — Swing lifecycle correction
 
 - Fixed a Phaser Clock pause state that survived restarting or leaving `GameScene` from the pause menu.

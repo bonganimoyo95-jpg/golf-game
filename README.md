@@ -1,6 +1,6 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.8.1, the swing-lifecycle correction following the course, camera and QA architecture release.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.9.0, the putting-perspective and game-feel release.
 
 ## What works now
 
@@ -10,9 +10,10 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Pre-round golfer, right/left-handed stance and independent tee selection
 - Mirrored play direction and meter placement for left-handed golfers
 - Identical club performance for both golfers; back/forward tees are a player choice
-- Twelve consistent poses per golfer covering setup, swing, putting and scoring
-- Slower, smoother backswing-to-impact sequence with a held follow-through
+- Twelve consistent runtime poses per golfer covering setup, full swings, forward-facing putting and scoring
+- One continuous, pause-safe swing timeline with a deliberate backswing, fast transition through impact, subtle root motion and held follow-through
 - One authoritative course definition shared by surface detection and both gameplay views
+- Augusta-11-inspired pine framing, dogwood colour, brighter turf and richer water and bunker texture without copying licensed course art
 - Procedurally drawn overhead fairway, lakes, green, bunkers and tees that cannot drift from collision geometry
 - Position-aware 2.5D lower course view projected from the ball instead of cropping one tee panorama
 - Updated title and score screens using the new golfer and course artwork
@@ -34,13 +35,17 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Water penalties that drop the ball at the point of entry
 - Out-of-bounds penalties that return to the previous spot
 - Bunker-first surface classification that cannot incorrectly force the putter
-- Side-on putting view aligned with the direction of play and the cup
-- Fixed putting target with an independently adjustable, mirrored aim line
+- Down-the-line putting view with the ball and cup on one centred forward axis
+- Handedness changes only the golfer's stance side; it never moves the physical cup
+- Fixed putting target with an independently adjustable aim line
 - Green scenery that retains the same horizon and course environment
+- Distance-scaled cup depth, dedicated rear three-quarter putting poses and perspective mowing lines
 - One-degree putting aim adjustments and a visible suggested-power marker
 - Tee-only driver selection; fairway, rough and bunker club lists follow the lie
 - Slower putting-meter timing and beginner-friendly cup capture
 - Short-distance putter power control and line-based cup capture
+- Cup-lip depth and a 230 ms ball-sink animation before the result screen
+- Smooth, capped three-percent carry bonus for pure full-swing contact, with no hidden putting bonus
 - Hole completion with strokes and score relative to par
 - Replay and return-to-title choices after completing the hole
 - Keyboard and touch controls
@@ -51,7 +56,7 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Deferred gameplay-art loading after the title screen
 - Native 352-pixel desktop canvas sizing for crisper pixel presentation
 
-Audio, additional holes, advanced shot types and final character/effects polish remain intentionally deferred. v0.8.0 still requires the final hands-on Codespaces acceptance pass described in `docs/PROJECT_2_CHECKPOINT_1.md`.
+Audio, additional holes, advanced shot types and the authored multi-plate course-art pass remain intentionally deferred. v0.9.0 still requires the hands-on Codespaces acceptance pass described in `docs/PROJECT_2_CHECKPOINT_3.md`.
 
 ## Run the game locally
 
@@ -97,7 +102,7 @@ npm run build
 
 The production website is generated in `dist/`. That folder is intentionally ignored by Git because it can be rebuilt at any time.
 
-The automated release baseline is `53` passing tests across `13` files.
+The automated release baseline is `61` passing tests across `14` files.
 
 ## QA scenario lab
 
@@ -116,6 +121,7 @@ Append `?qa=1` to the game URL, for example `http://localhost:5173/?qa=1`. The t
 - [`docs/PROJECT_1_CHECKPOINT_8.md`](docs/PROJECT_1_CHECKPOINT_8.md) — gameplay QA correction record
 - [`docs/PROJECT_2_CHECKPOINT_1.md`](docs/PROJECT_2_CHECKPOINT_1.md) — v0.8 course, camera and QA architecture record
 - [`docs/PROJECT_2_CHECKPOINT_2.md`](docs/PROJECT_2_CHECKPOINT_2.md) — paused-clock and swing-freeze correction record
+- [`docs/PROJECT_2_CHECKPOINT_3.md`](docs/PROJECT_2_CHECKPOINT_3.md) — v0.9 putting perspective and game-feel acceptance record
 
 ## Technical choices
 
