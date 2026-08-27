@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.10.0 — Azalea Bend production polish
+
+- Rebuilt the playable hole as the original 476-metre par-5 **Azalea Bend**, inspired by the strategic rhythm of a famous dogleg-left creek hole without copying licensed branding or exact geometry.
+- Added a single authoritative dogleg, inside creek, creek-fronted green and three rear bunkers shared by lie detection, the overhead map and the projected course view.
+- Added a properly tuned 3-wood between driver and iron, available from tee, fairway and rough but excluded from bunkers.
+- Added a tested driver–3-wood–wedge risk/reward route that can reach the cup in par or better.
+- Redesigned the 3/4-circle meter with a slimmer visual rail, compact marker, clearer power bands and visible accuracy window.
+- Added deterministic distance-scaled putting difficulty: wider and slower for short putts, narrower and faster for long putts.
+- Added a visible suggested-power tolerance band that narrows as putt distance increases.
+- Corrected both golfers' putting feet, hips and shoulders so their stance line runs parallel to the ball-to-cup line.
+- Added a deliberate top-of-swing transition, impact hold, club-trail cue, contact flash and lie-specific landing effects.
+- Added restrained procedural swing, impact, landing and cup audio without adding runtime audio assets.
+- Added richer mowing bands, creek banks, pine depth and azalea clusters while keeping course art tied to playable geometry.
+- Expanded automated coverage to 67 tests across 15 files.
+
 ## 0.9.0 — Putting perspective and game feel
 
 - Rebuilt putting around a down-the-line camera with the ball and cup on one centred forward axis.

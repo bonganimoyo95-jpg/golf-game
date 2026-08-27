@@ -1,6 +1,6 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.9.0, the putting-perspective and game-feel release.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.10.0, the Azalea Bend production-polish release.
 
 ## What works now
 
@@ -13,15 +13,15 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Twelve consistent runtime poses per golfer covering setup, full swings, forward-facing putting and scoring
 - One continuous, pause-safe swing timeline with a deliberate backswing, fast transition through impact, subtle root motion and held follow-through
 - One authoritative course definition shared by surface detection and both gameplay views
-- Augusta-11-inspired pine framing, dogwood colour, brighter turf and richer water and bunker texture without copying licensed course art
-- Procedurally drawn overhead fairway, lakes, green, bunkers and tees that cannot drift from collision geometry
+- Original Hole-13-inspired **Azalea Bend** par 5 with a sweeping left dogleg, inside creek, creek-fronted green, rear bunkers, pines and azalea colour without copying licensed course art
+- Procedurally drawn overhead fairway, creek, green, bunkers and tees that cannot drift from collision geometry
 - Position-aware 2.5D lower course view projected from the ball instead of cropping one tee panorama
 - Updated title and score screens using the new golfer and course artwork
 - Title screen and hole-introduction screen
 - Split overhead-map and golfer-view game screen
-- Four configurable clubs
+- Five configurable clubs, including a 3-wood between driver and iron
 - Left/right aiming and projected landing area
-- One-pass 3/4-circle swing meter: start, select power and strike at the contact line
+- Sleeker one-pass 3/4-circle swing meter with a slimmer rail, compact marker, visible contact window and putting-power target band
 - Faster downswing timing after higher-power selections
 - Early and late contact feedback with no meter looping or second chance
 - Deterministic club, power, accuracy, aim, wind and lie calculations
@@ -39,13 +39,14 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Handedness changes only the golfer's stance side; it never moves the physical cup
 - Fixed putting target with an independently adjustable aim line
 - Green scenery that retains the same horizon and course environment
-- Distance-scaled cup depth, dedicated rear three-quarter putting poses and perspective mowing lines
+- Distance-scaled cup depth, corrected rear three-quarter putting poses with feet parallel to the target line, and perspective mowing lines
 - One-degree putting aim adjustments and a visible suggested-power marker
-- Tee-only driver selection; fairway, rough and bunker club lists follow the lie
-- Slower putting-meter timing and beginner-friendly cup capture
+- Tee-only driver selection; the 3-wood is available from tee, fairway and rough but excluded from bunkers
+- Distance-scaled putting difficulty: short putts receive a wider timing window and slower return, while long putts narrow the window and accelerate the return without adding randomness
 - Short-distance putter power control and line-based cup capture
 - Cup-lip depth and a 230 ms ball-sink animation before the result screen
 - Smooth, capped three-percent carry bonus for pure full-swing contact, with no hidden putting bonus
+- Procedural swing, impact, landing and cup audio plus club-trail, impact-flash and terrain-contact effects
 - Hole completion with strokes and score relative to par
 - Replay and return-to-title choices after completing the hole
 - Keyboard and touch controls
@@ -56,7 +57,7 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Deferred gameplay-art loading after the title screen
 - Native 352-pixel desktop canvas sizing for crisper pixel presentation
 
-Audio, additional holes, advanced shot types and the authored multi-plate course-art pass remain intentionally deferred. v0.9.0 still requires the hands-on Codespaces acceptance pass described in `docs/PROJECT_2_CHECKPOINT_3.md`.
+Additional holes, advanced shot types and a full bespoke art-studio pipeline remain intentionally deferred. v0.10.0 still requires the hands-on Codespaces acceptance pass described in `docs/PROJECT_2_CHECKPOINT_4.md`.
 
 ## Run the game locally
 
@@ -102,7 +103,7 @@ npm run build
 
 The production website is generated in `dist/`. That folder is intentionally ignored by Git because it can be rebuilt at any time.
 
-The automated release baseline is `61` passing tests across `14` files.
+The automated release baseline is `67` passing tests across `15` files.
 
 ## QA scenario lab
 
@@ -122,6 +123,7 @@ Append `?qa=1` to the game URL, for example `http://localhost:5173/?qa=1`. The t
 - [`docs/PROJECT_2_CHECKPOINT_1.md`](docs/PROJECT_2_CHECKPOINT_1.md) — v0.8 course, camera and QA architecture record
 - [`docs/PROJECT_2_CHECKPOINT_2.md`](docs/PROJECT_2_CHECKPOINT_2.md) — paused-clock and swing-freeze correction record
 - [`docs/PROJECT_2_CHECKPOINT_3.md`](docs/PROJECT_2_CHECKPOINT_3.md) — v0.9 putting perspective and game-feel acceptance record
+- [`docs/PROJECT_2_CHECKPOINT_4.md`](docs/PROJECT_2_CHECKPOINT_4.md) — v0.10 Azalea Bend, 3-wood, meter and putting acceptance record
 
 ## Technical choices
 
