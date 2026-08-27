@@ -43,7 +43,8 @@ describe('authoritative course definition', () => {
   });
 
   it('gives bunker geometry priority where sand overlaps the green', () => {
-    expect(getLieAt({ x: -15, y: 377 })).toBe('bunker');
-    expect(getLieAt({ x: 17, y: 376 })).toBe('bunker');
+    expect(getLieAt({ x: -59, y: 485 })).toBe('bunker');
+    expect(getLieAt({ x: -30, y: 490 })).toBe('bunker');
+    expect(getLieAt({ x: -2, y: 484 })).toBe('bunker');
   });
 });

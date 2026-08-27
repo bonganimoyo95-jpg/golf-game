@@ -37,6 +37,14 @@ import {
   nextAllowedClubIndex,
   recommendedClubIndex,
 } from '../gameRules';
+import {
+  playCupDrop,
+  playFullImpact,
+  playLanding,
+  playPuttContact,
+  playSwingWhoosh,
+  unlockGameAudio,
+} from '../gameAudio';
 import { GAME_HEIGHT, GAME_WIDTH, SCENES } from '../constants';
 import {
   calculateShot,
@@ -44,6 +52,10 @@ import {
   sampleTrajectory,
   type ShotResult,
 } from '../physics/shotPhysics';
+import {
+  puttingAccuracyErrorAt,
+  puttingDifficultyForDistance,
+} from '../puttingDifficulty';
 import {
   PLAYER_PROFILE_REGISTRY_KEY,
   clubForProfile,
@@ -85,8 +97,8 @@ import { createButton } from '../ui/createButton';
 type SwingPhase = 'setup' | 'power' | 'accuracy' | 'result' | 'paused';
 
 const GROUND_Y = LANDSCAPE_GROUND_Y;
-const PUTTING_METER_SPEED_MULTIPLIER = 0.55;
 const METER_RADIUS = 47;
+const PUTTER_INDEX = CLUBS.findIndex((club) => club.id === 'putter');
 
 export class GameScene extends Phaser.Scene {
   private profile: PlayerProfile = {
@@ -126,6 +138,7 @@ export class GameScene extends Phaser.Scene {
   private meterSeventyFiveLabel!: Phaser.GameObjects.Text;
   private aimGraphics!: Phaser.GameObjects.Graphics;
   private meterGraphics!: Phaser.GameObjects.Graphics;
+  private swingEffectsGraphics!: Phaser.GameObjects.Graphics;
   private environmentGraphics!: Phaser.GameObjects.Graphics;
   private puttingForegroundGraphics!: Phaser.GameObjects.Graphics;
   private golferSprite!: Phaser.GameObjects.Image;
@@ -202,7 +215,7 @@ export class GameScene extends Phaser.Scene {
       this.meterPosition = advance.position;
       this.drawMeter();
       if (advance.missedContact) {
-        this.strikeBall(accuracyErrorAt(LATE_CONTACT_LIMIT));
+        this.strikeBall(this.accuracyErrorForCurrentShot(LATE_CONTACT_LIMIT));
       }
     }
   }
@@ -286,6 +299,7 @@ export class GameScene extends Phaser.Scene {
     this.environmentGraphics = this.add.graphics().setDepth(2);
     this.aimGraphics = this.add.graphics().setDepth(5);
     this.meterGraphics = this.add.graphics().setDepth(5);
+    this.swingEffectsGraphics = this.add.graphics().setDepth(7);
     this.puttingForegroundGraphics = this.add.graphics().setDepth(9);
 
     const startOnMap = worldToMap(this.ballPosition);
@@ -344,9 +358,9 @@ export class GameScene extends Phaser.Scene {
       .setDepth(9);
     this.meterLabel = this.add
       .text(this.meterCentreX(), 218, '', {
-        ...this.headerStyle('#24150f', 8),
-        backgroundColor: '#f3e6c8',
-        padding: { x: 4, y: 2 },
+        ...this.headerStyle('#f3e6c8', 8),
+        backgroundColor: '#24150f',
+        padding: { x: 5, y: 2 },
       })
       .setOrigin(0.5)
       .setDepth(8);
@@ -357,9 +371,8 @@ export class GameScene extends Phaser.Scene {
   private createMeterTickLabel(label: string): Phaser.GameObjects.Text {
     return this.add
       .text(0, 0, label, {
-        ...this.headerStyle('#c8b899', 7),
-        backgroundColor: '#24150f',
-        padding: { x: 2, y: 1 },
+        ...this.headerStyle('#c8b899', 6),
+        padding: { x: 1, y: 0 },
       })
       .setOrigin(0.5)
       .setDepth(8);
@@ -457,14 +470,15 @@ export class GameScene extends Phaser.Scene {
     this.statusText.setText(`SHOT ${this.strokeCount + 1}`);
     this.distanceText.setText(this.distanceLabel(this.ballPosition));
     const distance = distanceToPin(this.ballPosition);
+    const puttingDifficulty = puttingDifficultyForDistance(distance);
     const targetPuttPower = putterPowerForDistance(
-      this.currentClubAt(3),
+      this.currentClubAt(PUTTER_INDEX),
       distance,
       'green',
     );
     this.cameraText.setText(
       this.currentLie === 'green'
-        ? `CUP ${distance.toFixed(1)} M · SUGGESTED POWER ${Math.round(
+        ? `CUP ${distance.toFixed(1)} M · ${puttingDifficulty.label} · TRY ${Math.round(
             targetPuttPower * 100,
           )}%`
         : `${courseViewStage(this.ballPosition, this.currentLie).toUpperCase()} VIEW · ${
@@ -676,8 +690,14 @@ export class GameScene extends Phaser.Scene {
     const maximumAngle = Math.PI * 1.5;
     const markerAngle = meterAngleForPosition(this.meterPosition);
 
-    const arc = (startAngle: number, endAngle: number, color: number): void => {
-      this.meterGraphics.lineStyle(9, color, 1);
+    const arc = (
+      startAngle: number,
+      endAngle: number,
+      color: number,
+      width = 6,
+      alpha = 1,
+    ): void => {
+      this.meterGraphics.lineStyle(width, color, alpha);
       this.meterGraphics.beginPath();
       this.meterGraphics.arc(centreX, centreY, METER_RADIUS, startAngle, endAngle, false);
       this.meterGraphics.strokePath();
@@ -700,34 +720,64 @@ export class GameScene extends Phaser.Scene {
     };
 
     this.meterGraphics.clear();
-    this.meterGraphics.fillStyle(COLORS.espresso, 0.68);
-    this.meterGraphics.fillCircle(centreX, centreY, 33);
-    this.meterGraphics.lineStyle(17, COLORS.espresso, 0.92);
+    this.meterGraphics.fillStyle(COLORS.espresso, 0.46);
+    this.meterGraphics.fillCircle(centreX, centreY, 27);
+    this.meterGraphics.lineStyle(14, COLORS.espresso, 0.96);
     this.meterGraphics.beginPath();
     this.meterGraphics.arc(centreX, centreY, METER_RADIUS, 0, maximumAngle, false);
     this.meterGraphics.strokePath();
-    this.meterGraphics.lineStyle(13, COLORS.creamMuted, 0.44);
+    this.meterGraphics.lineStyle(8, COLORS.brownLight, 0.72);
     this.meterGraphics.beginPath();
     this.meterGraphics.arc(centreX, centreY, METER_RADIUS, 0, maximumAngle, false);
     this.meterGraphics.strokePath();
-    arc(0, contactAngle, COLORS.fairwayLight);
-    arc(contactAngle, Math.PI, COLORS.green);
-    arc(Math.PI, Math.PI * 1.25, COLORS.marigold);
-    arc(Math.PI * 1.25, Math.PI * 1.4, COLORS.orange);
-    arc(Math.PI * 1.4, maximumAngle, COLORS.red);
+    arc(0, contactAngle, COLORS.tobacco, 5, 0.82);
+    arc(contactAngle, meterAngleForPosition(0.5), COLORS.fairwayLight, 5, 0.9);
+    arc(
+      meterAngleForPosition(0.5),
+      meterAngleForPosition(0.75),
+      COLORS.creamMuted,
+      5,
+      0.96,
+    );
+    arc(meterAngleForPosition(0.75), maximumAngle, COLORS.marigold, 5, 1);
+
+    const puttDifficulty =
+      this.currentLie === 'green'
+        ? puttingDifficultyForDistance(distanceToPin(this.ballPosition))
+        : undefined;
+    const contactWindow = puttDifficulty?.contactWindow ?? 0.12;
+    arc(
+      meterAngleForPosition(-contactWindow),
+      meterAngleForPosition(contactWindow),
+      COLORS.green,
+      7,
+      0.92,
+    );
 
     const fiftyAngle = meterAngleForPosition(0.5);
     const seventyFiveAngle = meterAngleForPosition(0.75);
     radial(fiftyAngle, METER_RADIUS - 7, METER_RADIUS + 7, 3, COLORS.creamMuted);
     radial(seventyFiveAngle, METER_RADIUS - 7, METER_RADIUS + 7, 3, COLORS.creamMuted);
-    if (this.currentLie === 'green') {
+    if (puttDifficulty) {
+      const suggestedPower = this.suggestedPuttPower();
+      arc(
+        meterAngleForPosition(
+          Math.max(0.03, suggestedPower - puttDifficulty.powerBandHalfWidth),
+        ),
+        meterAngleForPosition(
+          Math.min(1, suggestedPower + puttDifficulty.powerBandHalfWidth),
+        ),
+        COLORS.white,
+        5,
+        0.34,
+      );
       radial(
-        meterAngleForPosition(this.suggestedPuttPower()),
+        meterAngleForPosition(suggestedPower),
         METER_RADIUS - 10,
         METER_RADIUS + 10,
-        3,
+        2,
         COLORS.white,
-        0.68,
+        0.9,
       );
     }
     if (this.phase === 'accuracy') {
@@ -740,21 +790,27 @@ export class GameScene extends Phaser.Scene {
       );
     }
     if (this.phase === 'power' || this.phase === 'accuracy') {
-      radial(markerAngle, METER_RADIUS - 12, METER_RADIUS + 11, 7, COLORS.espresso);
-      radial(markerAngle, METER_RADIUS - 10, METER_RADIUS + 9, 3, COLORS.white);
+      radial(markerAngle, METER_RADIUS - 8, METER_RADIUS + 8, 5, COLORS.espresso);
+      radial(markerAngle, METER_RADIUS - 6, METER_RADIUS + 6, 2, COLORS.white);
+      this.meterGraphics.fillStyle(COLORS.espresso, 1);
+      this.meterGraphics.fillCircle(
+        centreX + Math.cos(markerAngle) * (METER_RADIUS + 8),
+        centreY + Math.sin(markerAngle) * (METER_RADIUS + 8),
+        5,
+      );
       this.meterGraphics.fillStyle(COLORS.white, 1);
       this.meterGraphics.fillCircle(
-        centreX + Math.cos(markerAngle) * (METER_RADIUS + 10),
-        centreY + Math.sin(markerAngle) * (METER_RADIUS + 10),
-        3,
+        centreX + Math.cos(markerAngle) * (METER_RADIUS + 8),
+        centreY + Math.sin(markerAngle) * (METER_RADIUS + 8),
+        2.5,
       );
     }
-    radial(contactAngle, METER_RADIUS - 14, METER_RADIUS + 13, 7, COLORS.espresso);
-    radial(contactAngle, METER_RADIUS - 12, METER_RADIUS + 11, 4, COLORS.white);
+    radial(contactAngle, METER_RADIUS - 12, METER_RADIUS + 12, 5, COLORS.espresso);
+    radial(contactAngle, METER_RADIUS - 10, METER_RADIUS + 10, 2, COLORS.white);
     this.meterGraphics.fillStyle(COLORS.espresso, 1);
-    this.meterGraphics.fillCircle(centreX, centreY, 4);
-    this.positionMeterTickLabel(this.meterFiftyLabel, fiftyAngle, 65);
-    this.positionMeterTickLabel(this.meterSeventyFiveLabel, seventyFiveAngle, 65);
+    this.meterGraphics.fillCircle(centreX, centreY, 3);
+    this.positionMeterTickLabel(this.meterFiftyLabel, fiftyAngle, 62);
+    this.positionMeterTickLabel(this.meterSeventyFiveLabel, seventyFiveAngle, 62);
     this.meterLabel.setPosition(centreX, 218);
 
     if (this.phase === 'power') {
@@ -777,6 +833,7 @@ export class GameScene extends Phaser.Scene {
 
   private handleSwingInput(): void {
     if (this.phase === 'paused' || this.phase === 'result') return;
+    unlockGameAudio();
     const now = this.time.now;
     if (now - this.lastSwingInputAt < 160) return;
     this.lastSwingInputAt = now;
@@ -799,7 +856,7 @@ export class GameScene extends Phaser.Scene {
       this.drawMeter();
       return;
     }
-    this.strikeBall(accuracyErrorAt(this.meterPosition));
+    this.strikeBall(this.accuracyErrorForCurrentShot(this.meterPosition));
   }
 
   private strikeBall(accuracyError: number): void {
@@ -843,6 +900,7 @@ export class GameScene extends Phaser.Scene {
     const animationClock = { elapsedMs: 0 };
     let activePose: GolferPose | undefined;
     let launched = false;
+    let whooshPlayed = false;
 
     const renderSwing = (): void => {
       const visualState = swingVisualStateAt(kind, animationClock.elapsedMs);
@@ -851,8 +909,16 @@ export class GameScene extends Phaser.Scene {
         this.setGolferPose(visualState.pose);
       }
       this.applyGolferRootMotion(visualState);
+      this.drawSwingTrail(kind, animationClock.elapsedMs);
+      if (kind === 'full' && !whooshPlayed && animationClock.elapsedMs >= 385) {
+        whooshPlayed = true;
+        playSwingWhoosh();
+      }
       if (!launched && animationClock.elapsedMs >= SWING_LAUNCH_TIME_MS[kind]) {
         launched = true;
+        if (kind === 'putt') playPuttContact();
+        else playFullImpact(result.contactQuality);
+        this.showImpactFlash(result.club.isPutter);
         this.launchCalculatedShot(result);
       }
     };
@@ -867,7 +933,51 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => {
         animationClock.elapsedMs = duration;
         renderSwing();
+        this.swingEffectsGraphics.clear();
       },
+    });
+  }
+
+  private drawSwingTrail(kind: SwingAnimationKind, elapsedMs: number): void {
+    this.swingEffectsGraphics.clear();
+    if (kind !== 'full' || elapsedMs < 365 || elapsedMs > 640) return;
+    const progress = Phaser.Math.Clamp((elapsedMs - 365) / 275, 0, 1);
+    const alpha = Math.sin(progress * Math.PI) * 0.42;
+    const mirror = this.profile.handedness === 'left' ? -1 : 1;
+    const centreX = this.golferScreenX() + mirror * 4;
+    const startAngle = mirror === 1 ? -2.3 : Math.PI + 0.72;
+    const endAngle = startAngle + mirror * (0.7 + progress * 1.05);
+    this.swingEffectsGraphics.lineStyle(3, COLORS.cream, alpha);
+    this.swingEffectsGraphics.beginPath();
+    this.swingEffectsGraphics.arc(
+      centreX,
+      296,
+      37,
+      startAngle,
+      endAngle,
+      mirror < 0,
+    );
+    this.swingEffectsGraphics.strokePath();
+  }
+
+  private showImpactFlash(isPutter: boolean): void {
+    const flash = this.add
+      .circle(
+        this.ballScreenX(),
+        GROUND_Y,
+        isPutter ? 2 : 3,
+        isPutter ? COLORS.cream : COLORS.marigold,
+        0.9,
+      )
+      .setDepth(9);
+    this.tweens.add({
+      targets: flash,
+      scaleX: isPutter ? 2 : 4,
+      scaleY: isPutter ? 1.2 : 2,
+      alpha: 0,
+      duration: isPutter ? 100 : 170,
+      ease: 'Quad.easeOut',
+      onComplete: () => flash.destroy(),
     });
   }
 
@@ -930,6 +1040,8 @@ export class GameScene extends Phaser.Scene {
         this.meterLabel.setText(sample.phase.toUpperCase());
       },
       onComplete: () => {
+        playLanding(result.holed ? 'green' : result.finalLie);
+        this.showLandingEffect(result);
         if (!result.club.isPutter) {
           const finalScreen = shotBallScreenPosition(
             result,
@@ -969,6 +1081,7 @@ export class GameScene extends Phaser.Scene {
     const cup = this.cupScreenPosition(result.start);
     this.instructionText.setText('DROPS...');
     this.meterLabel.setText('CUP');
+    playCupDrop();
     this.tweens.add({
       targets: this.flightBall,
       x: cup.x,
@@ -983,6 +1096,48 @@ export class GameScene extends Phaser.Scene {
         this.resolveCalculatedShot(result);
       },
     });
+  }
+
+  private showLandingEffect(result: ShotResult): void {
+    const x = this.flightBall.x;
+    const y = this.flightBall.y;
+    const color =
+      result.finalLie === 'water'
+        ? COLORS.sky
+        : result.finalLie === 'bunker'
+          ? COLORS.bunker
+          : result.finalLie === 'green'
+            ? COLORS.cream
+            : COLORS.fairwayLight;
+    const ring = this.add
+      .circle(x, y, 4, color, 0)
+      .setStrokeStyle(2, color, 0.8)
+      .setDepth(9);
+    this.tweens.add({
+      targets: ring,
+      scaleX: result.finalLie === 'water' ? 4 : 2.6,
+      scaleY: result.finalLie === 'water' ? 1.4 : 1.8,
+      alpha: 0,
+      duration: result.finalLie === 'water' ? 320 : 220,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy(),
+    });
+
+    if (result.finalLie !== 'bunker' && result.finalLie !== 'water') return;
+    for (const direction of [-1, 0, 1]) {
+      const particle = this.add
+        .circle(x + direction * 2, y, 1.4, color, 0.9)
+        .setDepth(9);
+      this.tweens.add({
+        targets: particle,
+        x: x + direction * 8,
+        y: y - 5 - Math.abs(direction) * 2,
+        alpha: 0,
+        duration: 250 + Math.abs(direction) * 45,
+        ease: 'Quad.easeOut',
+        onComplete: () => particle.destroy(),
+      });
+    }
   }
 
   private resolveCalculatedShot(result: ShotResult): void {
@@ -1074,9 +1229,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   private meterDelta(delta: number): number {
+    if (this.currentLie !== 'green') return delta;
+    return (
+      delta *
+      puttingDifficultyForDistance(distanceToPin(this.ballPosition))
+        .meterSpeedMultiplier
+    );
+  }
+
+  private accuracyErrorForCurrentShot(position: number): number {
     return this.currentLie === 'green'
-      ? delta * PUTTING_METER_SPEED_MULTIPLIER
-      : delta;
+      ? puttingAccuracyErrorAt(position, distanceToPin(this.ballPosition))
+      : accuracyErrorAt(position);
   }
 
   private distanceLabel(position: WorldPosition): string {
@@ -1118,7 +1282,7 @@ export class GameScene extends Phaser.Scene {
 
   private suggestedPuttPower(): number {
     return putterPowerForDistance(
-      this.currentClubAt(3),
+      this.currentClubAt(PUTTER_INDEX),
       distanceToPin(this.ballPosition),
       'green',
     );

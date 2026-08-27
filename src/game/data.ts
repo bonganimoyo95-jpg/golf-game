@@ -1,7 +1,7 @@
 export type Lie = 'tee' | 'fairway' | 'rough' | 'bunker' | 'green' | 'water' | 'outOfBounds';
 
 export interface ClubDefinition {
-  id: 'driver' | 'iron' | 'wedge' | 'putter';
+  id: 'driver' | 'wood3' | 'iron' | 'wedge' | 'putter';
   name: string;
   shortName: string;
   maxDistanceMetres: number;
@@ -28,6 +28,20 @@ export const CLUBS: readonly ClubDefinition[] = [
     bounceHeightMetres: 2.8,
     dispersionDegrees: 11,
     windSensitivity: 0.72,
+    isPutter: false,
+  },
+  {
+    id: 'wood3',
+    name: '3 Wood',
+    shortName: '3W',
+    maxDistanceMetres: 178,
+    loftDegrees: 16,
+    peakHeightMetres: 26,
+    flightSeconds: 2.65,
+    baseRolloutMetres: 17,
+    bounceHeightMetres: 2.5,
+    dispersionDegrees: 9,
+    windSensitivity: 0.78,
     isPutter: false,
   },
   {
@@ -128,12 +142,12 @@ export const LIE_TUNING: Readonly<Record<Lie, LieTuning>> = {
 
 export const PROTOTYPE_HOLE = {
   number: 1,
-  name: 'Community Bend',
-  par: 4,
-  distanceMetres: 392,
+  name: 'Azalea Bend',
+  par: 5,
+  distanceMetres: 476,
   wind: {
-    direction: 'NE',
-    speed: 7,
-    bearingDegrees: 45,
+    direction: 'SE',
+    speed: 6,
+    bearingDegrees: 135,
   },
 } as const;

@@ -45,6 +45,13 @@ describe('one-pass swing meter', () => {
     expect(accuracyErrorAt(0)).toBe(0);
   });
 
+  it('supports a narrower visible timing window without adding randomness', () => {
+    expect(Math.abs(accuracyErrorAt(0.08, 0.12))).toBeGreaterThan(
+      Math.abs(accuracyErrorAt(0.08, 0.3)),
+    );
+    expect(accuracyErrorAt(0, 0.12)).toBe(0);
+  });
+
   it('maps the late zone, contact line and maximum onto a 3/4-circle', () => {
     expect(meterAngleForPosition(LATE_CONTACT_LIMIT)).toBeCloseTo(0);
     expect(meterAngleForPosition(0)).toBeCloseTo(Math.PI / 2);

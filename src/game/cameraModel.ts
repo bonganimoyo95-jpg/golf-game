@@ -166,8 +166,8 @@ export function ballAddressScreenX(handedness: Handedness): number {
  */
 export function puttingGolferScreenX(handedness: Handedness): number {
   return handedness === 'right'
-    ? COURSE_VIEW_CENTRE_X - 42
-    : COURSE_VIEW_CENTRE_X + 42;
+    ? COURSE_VIEW_CENTRE_X - 38
+    : COURSE_VIEW_CENTRE_X + 38;
 }
 
 export function puttingCupScreenPosition(distanceMetres: number): ScreenPoint {

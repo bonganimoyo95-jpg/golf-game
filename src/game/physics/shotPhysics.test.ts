@@ -28,8 +28,17 @@ describe('shot physics', () => {
 
   it('makes a driver travel farther than a wedge at the same inputs', () => {
     const driver = calculateShot(baseInput);
-    const wedge = calculateShot({ ...baseInput, club: CLUBS[2] });
+    const wedge = calculateShot({ ...baseInput, club: CLUBS[3] });
     expect(driver.totalMetres).toBeGreaterThan(wedge.totalMetres);
+  });
+
+  it('places the 3-wood cleanly between driver and iron distance', () => {
+    const driver = calculateShot(baseInput);
+    const wood = calculateShot({ ...baseInput, club: CLUBS[1] });
+    const iron = calculateShot({ ...baseInput, club: CLUBS[2] });
+
+    expect(driver.totalMetres).toBeGreaterThan(wood.totalMetres);
+    expect(wood.totalMetres).toBeGreaterThan(iron.totalMetres);
   });
 
   it('makes a lower-power shot travel a shorter distance', () => {
@@ -73,8 +82,8 @@ describe('shot physics', () => {
   it('does not add hidden distance to putts', () => {
     const putt = calculateShot({
       ...baseInput,
-      start: { x: 0, y: 382 },
-      club: CLUBS[3],
+      start: { x: -33, y: 460 },
+      club: CLUBS[4],
       power: 0.49,
       startingLie: 'green',
     });
@@ -104,7 +113,13 @@ describe('shot physics', () => {
   });
 
   it('adds a penalty and drops at the water entry point', () => {
-    const waterShot = calculateShot({ ...baseInput, aimDegrees: -15 });
+    const waterShot = calculateShot({
+      ...baseInput,
+      start: { x: -39, y: 370 },
+      club: CLUBS[3],
+      startingLie: 'fairway',
+      aimDegrees: 0,
+    });
     expect(waterShot.penalty).toBe(true);
     expect(waterShot.penaltyType).toBe('water');
     expect(waterShot.strokeCost).toBe(2);
@@ -117,10 +132,10 @@ describe('shot physics', () => {
   it('recognizes a shot that lands in either greenside bunker', () => {
     const bunkerShot = calculateShot({
       ...baseInput,
-      start: { x: 0, y: 300 },
-      club: CLUBS[2],
+      start: { x: -33, y: 415 },
+      club: CLUBS[3],
       power: 1,
-      aimDegrees: -12,
+      aimDegrees: -20,
       startingLie: 'fairway',
     });
 
@@ -132,19 +147,19 @@ describe('shot physics', () => {
   it('captures a controlled putt and finishes it at the pin', () => {
     const putt = calculateShot({
       ...baseInput,
-      start: { x: 0, y: 382 },
-      club: CLUBS[3],
+      start: { x: -33, y: 460 },
+      club: CLUBS[4],
       power: 0.49,
       startingLie: 'green',
     });
 
     expect(putt.holed).toBe(true);
-    expect(putt.resolvedEnd).toEqual({ x: 0, y: PROTOTYPE_HOLE.distanceMetres });
+    expect(putt.resolvedEnd).toEqual({ x: -33, y: 470 });
   });
 
   it('recommends putter power that reaches the requested distance', () => {
-    const power = putterPowerForDistance(CLUBS[3], 10, 'green');
-    const distance = putterRolloutForPower(CLUBS[3], power, 'green');
+    const power = putterPowerForDistance(CLUBS[4], 10, 'green');
+    const distance = putterRolloutForPower(CLUBS[4], power, 'green');
 
     expect(distance).toBeCloseTo(10, 5);
   });
@@ -152,8 +167,8 @@ describe('shot physics', () => {
   it('lets an overpowered putt run past the cup', () => {
     const putt = calculateShot({
       ...baseInput,
-      start: { x: 0, y: 382 },
-      club: CLUBS[3],
+      start: { x: -33, y: 460 },
+      club: CLUBS[4],
       power: 1,
       startingLie: 'green',
     });
@@ -163,16 +178,17 @@ describe('shot physics', () => {
   });
 
   it('can hole a recovery putt from beyond the cup', () => {
+    const power = putterPowerForDistance(CLUBS[4], 10, 'green');
     const putt = calculateShot({
       ...baseInput,
-      start: { x: 0, y: 400 },
-      club: CLUBS[3],
-      power: 0.42,
+      start: { x: -33, y: 480 },
+      club: CLUBS[4],
+      power,
       aimDegrees: 180,
       startingLie: 'green',
     });
 
     expect(putt.holed).toBe(true);
-    expect(putt.resolvedEnd).toEqual({ x: 0, y: PROTOTYPE_HOLE.distanceMetres });
+    expect(putt.resolvedEnd).toEqual({ x: -33, y: 470 });
   });
 });

@@ -17,12 +17,17 @@ describe('golfer swing animation timeline', () => {
 
   it('uses a deliberate backswing and a much faster transition to impact', () => {
     const frames = SWING_KEYFRAMES.full;
-    const backswingDuration = frames[2].atMs - frames[0].atMs;
-    const transitionToImpact = frames[4].atMs - frames[2].atMs;
+    const firstTop = frames.find((frame) => frame.pose === 'top')!;
+    const impact = frames.find(
+      (frame) =>
+        frame.pose === 'impact' && frame.atMs === SWING_LAUNCH_TIME_MS.full,
+    )!;
+    const backswingDuration = firstTop.atMs - frames[0].atMs;
+    const transitionToImpact = impact.atMs - firstTop.atMs;
 
     expect(backswingDuration).toBeGreaterThan(transitionToImpact);
-    expect(frames[4].pose).toBe('impact');
-    expect(frames[4].atMs).toBe(SWING_LAUNCH_TIME_MS.full);
+    expect(impact.pose).toBe('impact');
+    expect(impact.atMs).toBe(SWING_LAUNCH_TIME_MS.full);
   });
 
   it('interpolates subtle root motion without changing the active pose early', () => {

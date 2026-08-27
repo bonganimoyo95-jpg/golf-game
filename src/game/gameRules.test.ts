@@ -14,12 +14,21 @@ describe('lie-based club rules', () => {
     expect(allowedClubIndices('bunker')).not.toContain(0);
   });
 
-  it('forces the putter on the green', () => {
-    expect(allowedClubIndices('green')).toEqual([3]);
-    expect(nextAllowedClubIndex(0, 1, 'green')).toBe(3);
+  it('makes the 3-wood a long option from tee, fairway and rough only', () => {
+    const woodIndex = CLUBS.findIndex((club) => club.id === 'wood3');
+    expect(allowedClubIndices('tee')).toContain(woodIndex);
+    expect(allowedClubIndices('fairway')).toContain(woodIndex);
+    expect(allowedClubIndices('rough')).toContain(woodIndex);
+    expect(allowedClubIndices('bunker')).not.toContain(woodIndex);
+    expect(allowedClubIndices('green')).not.toContain(woodIndex);
   });
 
-  it('recommends an iron rather than a driver for a long fairway shot', () => {
+  it('forces the putter on the green', () => {
+    expect(allowedClubIndices('green')).toEqual([4]);
+    expect(nextAllowedClubIndex(0, 1, 'green')).toBe(4);
+  });
+
+  it('recommends the 3-wood rather than a driver for a long fairway shot', () => {
     expect(recommendedClubIndex(205, 'fairway', CLUBS)).toBe(1);
   });
 });

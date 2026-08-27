@@ -20,7 +20,7 @@ describe('QA scenarios', () => {
 
   it('respects the selected tee in the tee scenario', () => {
     const tee = resolveQaScenario('tee', profile);
-    expect(tee?.position).toEqual({ x: 0, y: 0 });
+    expect(tee?.position).toEqual({ x: 38, y: 0 });
     expect(tee?.lie).toBe('tee');
   });
 

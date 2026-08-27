@@ -54,8 +54,11 @@ export function advanceDownswingPosition(
   };
 }
 
-export function accuracyErrorAt(position: number): number {
-  return clamp(position / FULL_ACCURACY_ERROR_DISTANCE, -1, 1);
+export function accuracyErrorAt(
+  position: number,
+  accuracyWindow: number = FULL_ACCURACY_ERROR_DISTANCE,
+): number {
+  return clamp(position / Math.max(0.01, accuracyWindow), -1, 1);
 }
 
 export function meterAngleForPosition(position: number): number {

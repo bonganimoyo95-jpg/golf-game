@@ -7,9 +7,11 @@ import {
   COURSE_VIEW_TOP,
   COURSE_VIEW_WIDTH,
   LANDSCAPE_GROUND_Y,
+  courseViewStage,
   projectWorldToCourseView,
   worldToCameraSpace,
   type CourseCamera,
+  type CourseViewStage,
 } from './cameraModel';
 import {
   COURSE_DEFINITION,
@@ -78,6 +80,16 @@ function drawMapSurface(
     ellipse.width,
     ellipse.height,
   );
+
+  if (surface.lie === 'water') {
+    graphics.lineStyle(1, COLORS.cream, 0.2);
+    graphics.lineBetween(
+      ellipse.centre.x - ellipse.width * 0.31,
+      ellipse.centre.y,
+      ellipse.centre.x + ellipse.width * 0.18,
+      ellipse.centre.y,
+    );
+  }
 }
 
 export function drawCourseMapBase(
@@ -106,6 +118,17 @@ export function drawCourseMapBase(
     .reverse();
   graphics.fillStyle(COLORS.fairway, 1);
   graphics.fillPoints([...left, ...right], true);
+
+  // Alternating mowing bands are sampled from the same fairway edges, so the
+  // extra polish cannot drift away from the playable surface.
+  graphics.fillStyle(COLORS.fairwayLight, 0.12);
+  for (let index = 0; index < fairway.length - 1; index += 2) {
+    const nearLeft = worldToMapWithin(fairway[index].left, bounds);
+    const nearRight = worldToMapWithin(fairway[index].right, bounds);
+    const farLeft = worldToMapWithin(fairway[index + 1].left, bounds);
+    const farRight = worldToMapWithin(fairway[index + 1].right, bounds);
+    graphics.fillPoints([nearLeft, nearRight, farRight, farLeft], true);
+  }
   graphics.lineStyle(1, COLORS.fairwayLight, 0.72);
   graphics.strokePoints([...left, ...right], true);
 
@@ -132,6 +155,22 @@ export function drawCourseMapBase(
   }
 
   const pin = worldToMapWithin(COURSE_DEFINITION.pin, bounds);
+
+  // Azalea colour is concentrated behind the green, echoing the strategic and
+  // visual character of the reference without copying a branded course map.
+  for (const [offsetX, offsetY, color] of [
+    [-31, -8, 0xc86b78],
+    [-23, -13, 0xe09aa4],
+    [22, -12, 0xd77b89],
+    [31, -7, 0xf0b1b8],
+  ] as const) {
+    graphics.fillStyle(COLORS.rough, 0.9);
+    graphics.fillCircle(pin.x + offsetX, pin.y + offsetY, 4.5);
+    graphics.fillStyle(color, 0.9);
+    graphics.fillCircle(pin.x + offsetX - 1, pin.y + offsetY - 1, 1.5);
+    graphics.fillCircle(pin.x + offsetX + 2, pin.y + offsetY, 1.2);
+  }
+
   graphics.lineStyle(2, COLORS.cream, 1);
   graphics.lineBetween(pin.x, pin.y - 14, pin.x, pin.y + 2);
   graphics.fillStyle(COLORS.orange, 1);
@@ -197,6 +236,15 @@ function drawPerspectiveFairway(
   const polygon = [...left, ...right];
   graphics.fillStyle(COLORS.fairway, 1);
   graphics.fillPoints(polygon, true);
+
+  graphics.fillStyle(COLORS.fairwayLight, 0.1);
+  for (let index = 0; index < sections.length - 1; index += 2) {
+    const nearLeft = courseViewPoint(sections[index].left, camera);
+    const nearRight = courseViewPoint(sections[index].right, camera);
+    const farLeft = courseViewPoint(sections[index + 1].left, camera);
+    const farRight = courseViewPoint(sections[index + 1].right, camera);
+    graphics.fillPoints([nearLeft, nearRight, farRight, farLeft], true);
+  }
   graphics.lineStyle(1, COLORS.fairwayLight, 0.64);
   graphics.strokePoints(polygon, true);
 
@@ -230,6 +278,14 @@ function drawPerspectiveSurface(
       : surface.lie === 'bunker'
         ? COLORS.bunker
         : COLORS.green;
+  if (surface.lie === 'water') {
+    graphics.lineStyle(
+      Math.max(2, Math.round(projected.scale * 4)),
+      COLORS.espresso,
+      0.36,
+    );
+    graphics.strokeEllipse(projected.x, projected.y, width + 3, height + 2);
+  }
   graphics.fillStyle(color, surface.lie === 'green' ? 0.96 : 1);
   graphics.fillEllipse(projected.x, projected.y, width, height);
   graphics.lineStyle(
@@ -307,7 +363,62 @@ function drawPineSilhouette(
   );
 }
 
-function drawCourseHorizon(graphics: Phaser.GameObjects.Graphics): void {
+function drawAzaleaCluster(
+  graphics: Phaser.GameObjects.Graphics,
+  x: number,
+  y: number,
+  scale: number,
+  color: number,
+): void {
+  graphics.fillStyle(COLORS.rough, 0.96);
+  graphics.fillCircle(x, y, 8 * scale);
+  graphics.fillCircle(x + 7 * scale, y + 1 * scale, 7 * scale);
+  graphics.fillCircle(x - 6 * scale, y + 2 * scale, 6 * scale);
+  graphics.fillStyle(color, 0.9);
+  for (const [offsetX, offsetY, radius] of [
+    [-5, -2, 1.7],
+    [1, -5, 1.5],
+    [6, -1, 1.9],
+    [-1, 2, 1.4],
+    [9, 3, 1.3],
+  ] as const) {
+    graphics.fillCircle(
+      x + offsetX * scale,
+      y + offsetY * scale,
+      Math.max(0.8, radius * scale),
+    );
+  }
+}
+
+function drawAzaleaBanks(
+  graphics: Phaser.GameObjects.Graphics,
+  stage: CourseViewStage,
+): void {
+  const prominence = stage === 'green' ? 1.25 : stage === 'approach' ? 1 : 0.72;
+  const baseY = stage === 'green' ? 293 : 278;
+  const clusters = [
+    [22, 0, 0xd67483],
+    [43, -4, 0xe49aa4],
+    [64, 2, 0xc95e72],
+    [272, 2, 0xcf6a7b],
+    [294, -4, 0xe69ca8],
+    [316, 0, 0xc85d72],
+  ] as const;
+  for (const [relativeX, relativeY, color] of clusters) {
+    drawAzaleaCluster(
+      graphics,
+      COURSE_VIEW_LEFT + relativeX,
+      baseY + relativeY,
+      prominence,
+      color,
+    );
+  }
+}
+
+function drawCourseHorizon(
+  graphics: Phaser.GameObjects.Graphics,
+  stage: CourseViewStage,
+): void {
   graphics.fillStyle(COLORS.fairwayLight, 0.18);
   graphics.fillRect(
     COURSE_VIEW_LEFT,
@@ -368,6 +479,8 @@ function drawCourseHorizon(graphics: Phaser.GameObjects.Graphics): void {
     graphics.fillCircle(COURSE_VIEW_LEFT + x, y, 2);
     graphics.fillCircle(COURSE_VIEW_LEFT + x + 4, y + 1, 1.5);
   }
+
+  drawAzaleaBanks(graphics, stage);
 }
 
 function drawForegroundLie(
@@ -402,6 +515,7 @@ export function drawCoursePerspective(
   graphics: Phaser.GameObjects.Graphics,
   options: PerspectiveOptions,
 ): void {
+  const stage = courseViewStage(options.camera.position, options.currentLie);
   graphics.clear();
   graphics.fillStyle(COLORS.sky, 1);
   graphics.fillRect(
@@ -426,7 +540,7 @@ export function drawCoursePerspective(
     ],
     true,
   );
-  drawCourseHorizon(graphics);
+  drawCourseHorizon(graphics, stage);
   graphics.fillStyle(COLORS.rough, 1);
   graphics.fillRect(
     COURSE_VIEW_LEFT,

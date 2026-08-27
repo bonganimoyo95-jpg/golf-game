@@ -15,11 +15,11 @@ import {
   shotBallScreenPosition,
   shotCameraTravelMetres,
 } from './cameraModel';
-import { PIN_POSITION } from './courseModel';
+import { PIN_POSITION, TEE_POSITION } from './courseModel';
 import { calculateShot, sampleTrajectory } from './physics/shotPhysics';
 
 const shot = calculateShot({
-  start: { x: 0, y: 0 },
+  start: TEE_POSITION,
   club: CLUBS[0],
   power: 1,
   accuracyError: 0,
@@ -79,10 +79,10 @@ describe('position-aware course camera', () => {
   });
 
   it('selects stable view stages from actual progress', () => {
-    expect(courseViewStage({ x: 0, y: 0 }, 'tee')).toBe('tee');
-    expect(courseViewStage({ x: 0, y: 210 }, 'fairway')).toBe('fairway');
-    expect(courseViewStage({ x: 0, y: 340 }, 'fairway')).toBe('approach');
-    expect(courseViewStage({ x: 0, y: 386 }, 'green')).toBe('green');
+    expect(courseViewStage({ x: 38, y: 0 }, 'tee')).toBe('tee');
+    expect(courseViewStage({ x: 25, y: 210 }, 'fairway')).toBe('fairway');
+    expect(courseViewStage({ x: -38, y: 390 }, 'fairway')).toBe('approach');
+    expect(courseViewStage({ x: -33, y: 464 }, 'green')).toBe('green');
   });
 });
 

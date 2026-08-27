@@ -34,7 +34,15 @@ const FULL_SWING_KEYFRAMES: readonly SwingKeyframe[] = [
     scale: 1.008,
   },
   {
-    atMs: 395,
+    atMs: 355,
+    pose: 'top',
+    xOffset: -1.15,
+    yOffset: -0.75,
+    angleDegrees: -0.7,
+    scale: 1.008,
+  },
+  {
+    atMs: 410,
     pose: 'downswing',
     xOffset: -0.2,
     yOffset: 0,
@@ -50,7 +58,15 @@ const FULL_SWING_KEYFRAMES: readonly SwingKeyframe[] = [
     scale: 1,
   },
   {
-    atMs: 590,
+    atMs: 555,
+    pose: 'impact',
+    xOffset: 1,
+    yOffset: 0.1,
+    angleDegrees: 0.65,
+    scale: 1,
+  },
+  {
+    atMs: 620,
     pose: 'follow-through',
     xOffset: 0,
     yOffset: -0.5,
@@ -58,7 +74,7 @@ const FULL_SWING_KEYFRAMES: readonly SwingKeyframe[] = [
     scale: 1,
   },
   {
-    atMs: 800,
+    atMs: 830,
     pose: 'follow-through',
     xOffset: 0,
     yOffset: 0,
@@ -77,7 +93,7 @@ const PUTTING_KEYFRAMES: readonly SwingKeyframe[] = [
     scale: 1,
   },
   {
-    atMs: 160,
+    atMs: 145,
     pose: 'putt-forward-stroke',
     xOffset: -0.35,
     yOffset: 0,
@@ -85,7 +101,7 @@ const PUTTING_KEYFRAMES: readonly SwingKeyframe[] = [
     scale: 1,
   },
   {
-    atMs: 310,
+    atMs: 285,
     pose: 'putt-forward-stroke',
     xOffset: 0.35,
     yOffset: 0,
@@ -93,7 +109,7 @@ const PUTTING_KEYFRAMES: readonly SwingKeyframe[] = [
     scale: 1,
   },
   {
-    atMs: 430,
+    atMs: 405,
     pose: 'putt-forward-stroke',
     xOffset: 0,
     yOffset: 0,
@@ -111,7 +127,7 @@ export const SWING_KEYFRAMES: Readonly<
 
 export const SWING_LAUNCH_TIME_MS: Readonly<Record<SwingAnimationKind, number>> = {
   full: 520,
-  putt: 310,
+  putt: 285,
 };
 
 function clamp(value: number, minimum: number, maximum: number): number {

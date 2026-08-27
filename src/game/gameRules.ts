@@ -1,17 +1,22 @@
-import type { ClubDefinition, Lie } from './data';
+import { CLUBS, type ClubDefinition, type Lie } from './data';
 
-const CLUBS_BY_LIE: Readonly<Record<Lie, readonly number[]>> = {
-  tee: [0, 1, 2],
-  fairway: [1, 2],
-  rough: [1, 2],
-  bunker: [1, 2],
-  green: [3],
-  water: [1, 2],
-  outOfBounds: [1, 2],
+type ClubId = ClubDefinition['id'];
+
+const CLUBS_BY_LIE: Readonly<Record<Lie, readonly ClubId[]>> = {
+  tee: ['driver', 'wood3', 'iron', 'wedge'],
+  fairway: ['wood3', 'iron', 'wedge'],
+  rough: ['wood3', 'iron', 'wedge'],
+  bunker: ['iron', 'wedge'],
+  green: ['putter'],
+  water: ['wood3', 'iron', 'wedge'],
+  outOfBounds: ['wood3', 'iron', 'wedge'],
 };
 
 export function allowedClubIndices(lie: Lie): readonly number[] {
-  return CLUBS_BY_LIE[lie];
+  const allowedIds = CLUBS_BY_LIE[lie];
+  return CLUBS.map((club, index) => ({ club, index }))
+    .filter(({ club }) => allowedIds.includes(club.id))
+    .map(({ index }) => index);
 }
 
 export function nextAllowedClubIndex(
@@ -48,6 +53,9 @@ export function recommendedClubIndex(
   ) {
     return ironIndex;
   }
+
+  const woodIndex = allowed.find((index) => clubs[index].id === 'wood3');
+  if (woodIndex !== undefined) return woodIndex;
 
   return allowed[0];
 }
