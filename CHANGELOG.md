@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.11.0 — Shot planning and recovery clarity
+
+- Increased the rated club ladder to Driver 250 m, 3-wood 220 m, Iron 165 m, Wedge 95 m and Putter 30 m.
+- Added a clear **PIN** distance readout plus rated full-swing carry and total distance for the selected club.
+- Added separate **PLAY** and **FULL** targets to the overhead map, with matching target symbols in the lower course view.
+- Added deterministic club and power recommendations plus a white meter guide for every club.
+- Kept planning distances honest by excluding the optional three-percent pure-contact bonus from pre-shot projections.
+- Made all full-shot aiming relative to the pin, so recovery shots from beyond the green correctly face back toward the cup.
+- Added a visible projected flag to the full-shot course view.
+- Extended the playable recovery apron behind the green so visible shots no longer trigger an unexplained rear-boundary penalty.
+- Added pre-shot water/out-of-bounds warnings and prominent post-shot penalty banners explaining the stroke and drop location.
+- Added dedicated regression coverage for club scaling, target power, PLAY/FULL separation, rear-green aiming, rated distances and warnings.
+- Expanded automated coverage to 74 tests across 16 files.
+
 ## 0.10.0 — Azalea Bend production polish
 
 - Rebuilt the playable hole as the original 476-metre par-5 **Azalea Bend**, inspired by the strategic rhythm of a famous dogleg-left creek hole without copying licensed branding or exact geometry.

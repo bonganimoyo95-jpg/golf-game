@@ -1,6 +1,6 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.10.0, the Azalea Bend production-polish release.
+An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.11.0, the shot-planning and recovery-clarity release.
 
 ## What works now
 
@@ -20,7 +20,12 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Title screen and hole-introduction screen
 - Split overhead-map and golfer-view game screen
 - Five configurable clubs, including a 3-wood between driver and iron
+- Expanded rated distances: Driver 250 m, 3-wood 220 m, Iron 165 m, Wedge 95 m and Putter 30 m
 - Left/right aiming and projected landing area
+- Pin-relative full-shot aiming that remains correct from behind or beside the green
+- Separate PLAY and FULL target markers on the map and projected course view
+- Selected-club carry/total breakdown, recommended club/power and a white meter power guide
+- Visible full-shot flag plus explicit pre-shot hazard warnings and post-shot penalty/drop banners
 - Sleeker one-pass 3/4-circle swing meter with a slimmer rail, compact marker, visible contact window and putting-power target band
 - Faster downswing timing after higher-power selections
 - Early and late contact feedback with no meter looping or second chance
@@ -57,7 +62,7 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Deferred gameplay-art loading after the title screen
 - Native 352-pixel desktop canvas sizing for crisper pixel presentation
 
-Additional holes, advanced shot types and a full bespoke art-studio pipeline remain intentionally deferred. v0.10.0 still requires the hands-on Codespaces acceptance pass described in `docs/PROJECT_2_CHECKPOINT_4.md`.
+Additional holes, advanced shot types and a full bespoke art-studio pipeline remain intentionally deferred. v0.11.0 still requires the hands-on Codespaces acceptance pass described in `docs/PROJECT_2_CHECKPOINT_5.md`.
 
 ## Run the game locally
 
@@ -103,7 +108,7 @@ npm run build
 
 The production website is generated in `dist/`. That folder is intentionally ignored by Git because it can be rebuilt at any time.
 
-The automated release baseline is `67` passing tests across `15` files.
+The automated release baseline is `74` passing tests across `16` files.
 
 ## QA scenario lab
 
@@ -124,6 +129,7 @@ Append `?qa=1` to the game URL, for example `http://localhost:5173/?qa=1`. The t
 - [`docs/PROJECT_2_CHECKPOINT_2.md`](docs/PROJECT_2_CHECKPOINT_2.md) — paused-clock and swing-freeze correction record
 - [`docs/PROJECT_2_CHECKPOINT_3.md`](docs/PROJECT_2_CHECKPOINT_3.md) — v0.9 putting perspective and game-feel acceptance record
 - [`docs/PROJECT_2_CHECKPOINT_4.md`](docs/PROJECT_2_CHECKPOINT_4.md) — v0.10 Azalea Bend, 3-wood, meter and putting acceptance record
+- [`docs/PROJECT_2_CHECKPOINT_5.md`](docs/PROJECT_2_CHECKPOINT_5.md) — v0.11 club-distance, planning and recovery acceptance record
 
 ## Technical choices
 
