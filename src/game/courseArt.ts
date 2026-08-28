@@ -511,6 +511,30 @@ function drawForegroundLie(
   }
 }
 
+function drawPerspectiveFlag(
+  graphics: Phaser.GameObjects.Graphics,
+  camera: CourseCamera,
+): void {
+  const pin = projectWorldToCourseView(COURSE_DEFINITION.pin, camera);
+  if (!pin.visible || pin.forwardMetres < 0.5) return;
+  const scale = clamp(pin.scale, 0.45, 1);
+  const height = 34 * scale;
+  const flagWidth = 18 * scale;
+  graphics.lineStyle(Math.max(1, 2 * scale), COLORS.cream, 1);
+  graphics.lineBetween(pin.x, pin.y + 1, pin.x, pin.y - height);
+  graphics.fillStyle(COLORS.orange, 1);
+  graphics.fillTriangle(
+    pin.x,
+    pin.y - height,
+    pin.x + flagWidth,
+    pin.y - height + 6 * scale,
+    pin.x,
+    pin.y - height + 12 * scale,
+  );
+  graphics.fillStyle(COLORS.black, 0.92);
+  graphics.fillEllipse(pin.x, pin.y, 10 * scale, Math.max(2, 4 * scale));
+}
+
 export function drawCoursePerspective(
   graphics: Phaser.GameObjects.Graphics,
   options: PerspectiveOptions,
@@ -558,5 +582,6 @@ export function drawCoursePerspective(
   for (const surface of visibleSurfaces) {
     drawPerspectiveSurface(graphics, surface, options.camera);
   }
+  drawPerspectiveFlag(graphics, options.camera);
   drawForegroundLie(graphics, options.currentLie);
 }

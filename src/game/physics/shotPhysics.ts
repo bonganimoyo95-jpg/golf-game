@@ -214,7 +214,10 @@ function resolvePenalty(
   };
 }
 
-export function calculateShot(input: ShotInput): ShotResult {
+function calculateShotWithContactBonus(
+  input: ShotInput,
+  applyContactBonus: boolean,
+): ShotResult {
   const power = clamp(input.power, input.club.isPutter ? 0.03 : 0.15, 1);
   const accuracyError = clamp(input.accuracyError, -1, 1);
   const contactQuality = contactQualityForAccuracy(accuracyError);
@@ -283,8 +286,9 @@ export function calculateShot(input: ShotInput): ShotResult {
   const powerDistanceScale = 0.32 + power * 0.68;
   const carryWithoutContactBonus =
     input.club.maxDistanceMetres * powerDistanceScale * lieTuning.distanceMultiplier;
-  const carryBonusMetres =
-    carryWithoutContactBonus * MAX_PURE_CONTACT_CARRY_BONUS * contactQuality;
+  const carryBonusMetres = applyContactBonus
+    ? carryWithoutContactBonus * MAX_PURE_CONTACT_CARRY_BONUS * contactQuality
+    : 0;
   const carryMetres = carryWithoutContactBonus + carryBonusMetres;
   const flightSeconds = input.club.flightSeconds * (0.72 + power * 0.28);
   const windDirection = directionVector(input.wind.bearingDegrees);
@@ -342,6 +346,21 @@ export function calculateShot(input: ShotInput): ShotResult {
     strokeCost: penalty ? 2 : 1,
     club: input.club,
   };
+}
+
+/**
+ * Resolves a real strike, including the smoothly tapered pure-contact bonus.
+ */
+export function calculateShot(input: ShotInput): ShotResult {
+  return calculateShotWithContactBonus(input, true);
+}
+
+/**
+ * Resolves a pre-shot projection at the club's rated distance. Planning
+ * graphics must not promise the optional three-percent perfect-contact bonus.
+ */
+export function calculateRatedShot(input: ShotInput): ShotResult {
+  return calculateShotWithContactBonus(input, false);
 }
 
 export function sampleTrajectory(result: ShotResult, progressValue: number): TrajectoryPoint {

@@ -247,10 +247,11 @@ These are implementation baselines, not permanent balance commitments:
 
 | Club | Approximate maximum distance | Primary use |
 | --- | ---: | --- |
-| Driver | 200 m | Tee and long fairway shots |
-| Iron | 140 m | Approach and recovery shots |
-| Wedge | 70 m | Short approaches and bunkers |
-| Putter | 25 m | Green only |
+| Driver | 250 m | Tee shots |
+| 3 Wood | 220 m | Long tee, fairway and rough shots |
+| Iron | 165 m | Approach and recovery shots |
+| Wedge | 95 m | Short approaches and bunkers |
+| Putter | 30 m | Green only |
 
 The prototype hole should be approximately 380–400 metres and remain completable with imperfect but reasonable inputs.
 

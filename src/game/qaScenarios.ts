@@ -85,8 +85,8 @@ export const QA_SCENARIOS: readonly QaScenario[] = [
   {
     id: 'water-drop',
     label: 'WATER DROP',
-    instruction: 'USE FULL WEDGE AT 0° · VERIFY CREEK ENTRY DROP',
-    position: { x: -39, y: 370 },
+    instruction: 'USE FULL WEDGE AT 0° TO PIN · VERIFY CREEK ENTRY DROP',
+    position: { x: -39, y: 345 },
     expectedLie: 'fairway',
     clubIndex: 3,
     aimDegrees: 0,
@@ -94,11 +94,11 @@ export const QA_SCENARIOS: readonly QaScenario[] = [
   {
     id: 'out-of-bounds',
     label: 'OUT OF BOUNDS',
-    instruction: 'USE FULL 3-WOOD AT +30° · VERIFY PREVIOUS SPOT',
+    instruction: 'USE FULL 3-WOOD AT -30° FROM PIN · VERIFY PREVIOUS SPOT',
     position: { x: 20, y: 300 },
     expectedLie: 'fairway',
     clubIndex: 1,
-    aimDegrees: 30,
+    aimDegrees: -30,
   },
 ] as const;
 

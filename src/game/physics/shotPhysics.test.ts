@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLUBS, PROTOTYPE_HOLE } from '../data';
-import { TEE_POSITION, getLieAt } from '../courseModel';
+import { PIN_POSITION, TEE_POSITION, getLieAt } from '../courseModel';
 import {
   MAX_PURE_CONTACT_CARRY_BONUS,
   calculateShot,
@@ -113,12 +113,16 @@ describe('shot physics', () => {
   });
 
   it('adds a penalty and drops at the water entry point', () => {
+    const start = { x: -39, y: 345 };
+    const aimDegrees =
+      (Math.atan2(PIN_POSITION.x - start.x, PIN_POSITION.y - start.y) * 180) /
+      Math.PI;
     const waterShot = calculateShot({
       ...baseInput,
-      start: { x: -39, y: 370 },
+      start,
       club: CLUBS[3],
       startingLie: 'fairway',
-      aimDegrees: 0,
+      aimDegrees,
     });
     expect(waterShot.penalty).toBe(true);
     expect(waterShot.penaltyType).toBe('water');
@@ -130,12 +134,15 @@ describe('shot physics', () => {
   });
 
   it('recognizes a shot that lands in either greenside bunker', () => {
+    const start = { x: -33, y: 390 };
+    const bunker = { x: -59, y: 485 };
     const bunkerShot = calculateShot({
       ...baseInput,
-      start: { x: -33, y: 415 },
+      start,
       club: CLUBS[3],
       power: 1,
-      aimDegrees: -20,
+      aimDegrees:
+        (Math.atan2(bunker.x - start.x, bunker.y - start.y) * 180) / Math.PI,
       startingLie: 'fairway',
     });
 
@@ -145,11 +152,12 @@ describe('shot physics', () => {
   });
 
   it('captures a controlled putt and finishes it at the pin', () => {
+    const power = putterPowerForDistance(CLUBS[4], 10, 'green');
     const putt = calculateShot({
       ...baseInput,
       start: { x: -33, y: 460 },
       club: CLUBS[4],
-      power: 0.49,
+      power,
       startingLie: 'green',
     });
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CLUBS, PROTOTYPE_HOLE } from './data';
 import { calculateShot } from './physics/shotPhysics';
 import { QA_SCENARIOS, resolveQaScenario } from './qaScenarios';
+import { absoluteAimFromPin } from './shotPlanning';
 
 const profile = {
   gender: 'female' as const,
@@ -36,7 +37,7 @@ describe('QA scenarios', () => {
         club: CLUBS[scenario.clubIndex],
         power: 1,
         accuracyError: 0,
-        aimDegrees: scenario.aimDegrees,
+        aimDegrees: absoluteAimFromPin(scenario.position, scenario.aimDegrees),
         wind: PROTOTYPE_HOLE.wind,
       });
       expect(result.penaltyType).toBe(penaltyType);

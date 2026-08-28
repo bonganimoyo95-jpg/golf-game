@@ -33,7 +33,10 @@ export const COURSE_DEFINITION = {
     minimumX: -110,
     maximumX: 90,
     minimumY: -10,
-    maximumY: 500,
+    // Keep a playable recovery apron behind the green. A shot that finishes
+    // beyond the pin should remain visible and playable unless it crosses a
+    // genuinely authored lateral boundary.
+    maximumY: 550,
   } satisfies CourseBounds,
   // The displayed distance follows the intended playing route. The direct
   // tee-to-pin line is deliberately shorter so a bold line around the corner

@@ -38,6 +38,15 @@ export function recommendedClubIndex(
   const allowed = allowedClubIndices(lie);
   if (allowed.length === 1) return allowed[0];
 
+  const driverIndex = allowed.find((index) => clubs[index].id === 'driver');
+  const woodIndex = allowed.find((index) => clubs[index].id === 'wood3');
+  if (
+    driverIndex !== undefined &&
+    (woodIndex === undefined || distanceMetres > clubs[woodIndex].maxDistanceMetres)
+  ) {
+    return driverIndex;
+  }
+
   const wedgeIndex = allowed.find((index) => clubs[index].id === 'wedge');
   if (
     wedgeIndex !== undefined &&
@@ -54,7 +63,6 @@ export function recommendedClubIndex(
     return ironIndex;
   }
 
-  const woodIndex = allowed.find((index) => clubs[index].id === 'wood3');
   if (woodIndex !== undefined) return woodIndex;
 
   return allowed[0];

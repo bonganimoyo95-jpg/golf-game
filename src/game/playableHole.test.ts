@@ -6,6 +6,7 @@ import {
   putterPowerForDistance,
   type ShotResult,
 } from './physics/shotPhysics';
+import { buildShotPlan } from './shotPlanning';
 
 function takeShot(
   start: ShotResult['resolvedEnd'],
@@ -26,7 +27,7 @@ function takeShot(
 }
 
 describe('playable hole', () => {
-  it('has a deterministic driver, 3-wood and wedge route in par or better', () => {
+  it('has a deterministic planned route in par or better', () => {
     const bearingToPin = (position: ShotResult['resolvedEnd']): number =>
       (Math.atan2(
         PIN_POSITION.x - position.x,
@@ -35,36 +36,43 @@ describe('playable hole', () => {
         180) /
       Math.PI;
 
-    const drive = takeShot({ ...TEE_POSITION }, 'tee', 0, 1, 0);
+    const drive = takeShot(
+      { ...TEE_POSITION },
+      'tee',
+      0,
+      1,
+      bearingToPin(TEE_POSITION),
+    );
+    const woodPlan = buildShotPlan({
+      start: drive.resolvedEnd,
+      startingLie: drive.resolvedLie,
+      clubs: CLUBS,
+      selectedClubIndex: 1,
+      relativeAimDegrees: 0,
+      wind: PROTOTYPE_HOLE.wind,
+    });
     const wood = takeShot(
       drive.resolvedEnd,
-      drive.finalLie,
+      drive.resolvedLie,
       1,
-      1,
+      woodPlan.selected.power,
       bearingToPin(drive.resolvedEnd),
-    );
-    const wedge = takeShot(
-      wood.resolvedEnd,
-      wood.finalLie,
-      3,
-      1,
-      bearingToPin(wood.resolvedEnd),
     );
     const bearingToCup =
       (Math.atan2(
-        PIN_POSITION.x - wedge.resolvedEnd.x,
-        PIN_POSITION.y - wedge.resolvedEnd.y,
+        PIN_POSITION.x - wood.resolvedEnd.x,
+        PIN_POSITION.y - wood.resolvedEnd.y,
       ) *
         180) /
       Math.PI;
     const puttPower = putterPowerForDistance(
       CLUBS[4],
-      distanceBetween(wedge.resolvedEnd, PIN_POSITION),
+      distanceBetween(wood.resolvedEnd, PIN_POSITION),
       'green',
     );
     const putt = takeShot(
-      wedge.resolvedEnd,
-      wedge.finalLie,
+      wood.resolvedEnd,
+      wood.finalLie,
       4,
       puttPower,
       bearingToCup,
@@ -73,9 +81,9 @@ describe('playable hole', () => {
     expect(drive.penalty).toBe(false);
     expect(wood.start).toEqual(drive.resolvedEnd);
     expect(wood.penalty).toBe(false);
-    expect(wedge.finalLie).toBe('green');
+    expect(wood.finalLie).toBe('green');
     expect(putt.holed).toBe(true);
     expect(putt.resolvedEnd).toEqual(PIN_POSITION);
-    expect(4).toBeLessThanOrEqual(PROTOTYPE_HOLE.par);
+    expect(3).toBeLessThanOrEqual(PROTOTYPE_HOLE.par);
   });
 });

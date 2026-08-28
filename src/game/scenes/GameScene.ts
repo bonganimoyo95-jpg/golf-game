@@ -14,6 +14,7 @@ import {
   puttingGolferScreenX,
   puttingRollScreenPosition,
   puttingTargetScale,
+  projectWorldToCourseView,
   shotCameraForSample,
   shotBallScreenPosition,
 } from '../cameraModel';
@@ -76,6 +77,11 @@ import {
   type ReplaySession,
 } from '../replayLog';
 import { resumeSceneSystems } from '../sceneMotion';
+import {
+  buildShotPlan,
+  penaltyWarning,
+  type ShotPlan,
+} from '../shotPlanning';
 import {
   SWING_LAUNCH_TIME_MS,
   swingDurationMs,
@@ -147,6 +153,10 @@ export class GameScene extends Phaser.Scene {
   private setupBall!: Phaser.GameObjects.Arc;
   private pauseObjects: Phaser.GameObjects.GameObject[] = [];
   private pauseStatusText?: Phaser.GameObjects.Text;
+  private playTargetText!: Phaser.GameObjects.Text;
+  private fullTargetText!: Phaser.GameObjects.Text;
+  private penaltyBannerText!: Phaser.GameObjects.Text;
+  private currentPlan?: ShotPlan;
 
   constructor() {
     super(SCENES.game);
@@ -366,6 +376,34 @@ export class GameScene extends Phaser.Scene {
       .setDepth(8);
     this.meterFiftyLabel = this.createMeterTickLabel('50');
     this.meterSeventyFiveLabel = this.createMeterTickLabel('75');
+    this.playTargetText = this.add
+      .text(0, 0, 'PLAY', {
+        ...this.headerStyle('#24150f', 6),
+        backgroundColor: '#f3e6c8',
+        padding: { x: 2, y: 1 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(8)
+      .setVisible(false);
+    this.fullTargetText = this.add
+      .text(0, 0, 'FULL', {
+        ...this.headerStyle('#24150f', 6),
+        backgroundColor: '#d8a43e',
+        padding: { x: 2, y: 1 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(8)
+      .setVisible(false);
+    this.penaltyBannerText = this.add
+      .text(176, 276, '', {
+        ...this.headerStyle('#f3e6c8', 11),
+        backgroundColor: '#7a241c',
+        padding: { x: 9, y: 6 },
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setDepth(12)
+      .setVisible(false);
   }
 
   private createMeterTickLabel(label: string): Phaser.GameObjects.Text {
@@ -447,12 +485,16 @@ export class GameScene extends Phaser.Scene {
     }
 
     const club = this.currentClub();
+    this.currentPlan = this.buildCurrentShotPlan();
+    const plan = this.currentPlan;
+    const fullCarry = Math.round(plan.selectedFull.result.carryMetres);
+    const fullTotal = Math.round(plan.selectedFull.result.totalMetres);
     const mapPosition = worldToMap(this.ballPosition);
     this.mapBall.setPosition(mapPosition.x, mapPosition.y);
     this.clubText.setText(
       club.isPutter
-        ? `${club.shortName} · ${club.maxDistanceMetres} M`
-        : `${club.shortName} · ${club.maxDistanceMetres} M · ${club.loftDegrees}°`,
+        ? `${club.shortName} · MAX ${club.maxDistanceMetres} M`
+        : `${club.shortName} · CARRY ${fullCarry} · TOTAL ${fullTotal}`,
     );
     this.aimText.setText(
       `${this.currentLie === 'green' ? 'PUTT LINE' : 'SHOT LINE'} ${
@@ -476,27 +518,40 @@ export class GameScene extends Phaser.Scene {
       distance,
       'green',
     );
+    const selectedPower = Math.round(plan.selected.power * 100);
+    const selectedWarning = penaltyWarning(plan.selected.result);
+    const fullWarning = penaltyWarning(plan.selectedFull.result);
+    const recommendedClub = this.currentClubAt(plan.recommended.clubIndex);
+    const recommendedPower = Math.round(plan.recommended.power * 100);
     this.cameraText.setText(
       this.currentLie === 'green'
         ? `CUP ${distance.toFixed(1)} M · ${puttingDifficulty.label} · TRY ${Math.round(
             targetPuttPower * 100,
           )}%`
-        : `${courseViewStage(this.ballPosition, this.currentLie).toUpperCase()} VIEW · ${
-            Math.round(this.ballPosition.y)
-          } M UP HOLE`,
+        : `PLAY ${selectedPower}% · FULL C${fullCarry}/T${fullTotal} · ${courseViewStage(
+            this.ballPosition,
+            this.currentLie,
+          ).toUpperCase()}`,
     );
     this.instructionText.setText(
-      this.qaScenario && this.strokeCount === 0
-        ? `QA · ${this.qaScenario.instruction}`
-        : this.currentLie === 'green'
-          ? 'FACE THE CUP · READ LINE · PRESS SWING'
-          : 'AIM · PICK CLUB · PRESS SWING',
+      selectedWarning
+        ? `DANGER · PLAY TARGET IS ${selectedWarning}`
+        : fullWarning && plan.selected.power < 0.995
+          ? `DANGER · FULL SWING REACHES ${fullWarning}`
+          : this.qaScenario && this.strokeCount === 0
+            ? `QA · ${this.qaScenario.instruction}`
+            : this.currentLie === 'green'
+              ? 'FACE THE CUP · READ LINE · PRESS SWING'
+              : `RECOMMEND ${recommendedClub.shortName} · ${
+                  plan.recommended.cannotReach ? 'FULL' : `${recommendedPower}%`
+                } · WHITE GUIDE`,
     );
     this.meterLabel.setText(
       this.currentLie === 'green'
         ? `TRY ${Math.round(targetPuttPower * 100)}%`
-        : 'READY',
+        : `GUIDE ${selectedPower}%`,
     );
+    this.penaltyBannerText.setVisible(false);
     this.meterPosition = 0;
     this.selectedPower = 0;
     this.setupBall
@@ -535,21 +590,30 @@ export class GameScene extends Phaser.Scene {
     return clubForProfile(CLUBS[index], this.profile);
   }
 
+  private buildCurrentShotPlan(): ShotPlan {
+    return buildShotPlan({
+      start: this.ballPosition,
+      startingLie: this.currentLie,
+      clubs: CLUBS.map((_, index) => this.currentClubAt(index)),
+      selectedClubIndex: this.clubIndex,
+      relativeAimDegrees: this.aimDegrees,
+      wind: PROTOTYPE_HOLE.wind,
+    });
+  }
+
   private drawAimGuide(): void {
     const club = this.currentClub();
-    const projection = calculateShot({
-      start: this.ballPosition,
-      club,
-      power: 1,
-      accuracyError: 0,
-      aimDegrees: this.shotAimDegrees(),
-      wind: PROTOTYPE_HOLE.wind,
-      startingLie: this.currentLie,
-    });
+    const plan = this.currentPlan ?? this.buildCurrentShotPlan();
+    const projection = plan.selected.result;
+    const fullProjection = plan.selectedFull.result;
     const start = worldToMap(this.ballPosition);
     const landing = worldToMap(projection.carryEnd);
     const final = worldToMap(projection.visualEnd);
+    const fullLanding = worldToMap(fullProjection.carryEnd);
+    const fullFinal = worldToMap(fullProjection.visualEnd);
     this.aimGraphics.clear();
+    this.playTargetText.setVisible(false);
+    this.fullTargetText.setVisible(false);
 
     if (club.isPutter) {
       const pin = worldToMap(PIN_POSITION);
@@ -568,11 +632,39 @@ export class GameScene extends Phaser.Scene {
     this.aimGraphics.lineBetween(start.x, start.y, landing.x, landing.y);
     this.aimGraphics.lineStyle(2, COLORS.cream, 0.88);
     this.aimGraphics.lineBetween(start.x, start.y, landing.x, landing.y);
-    this.aimGraphics.lineStyle(1, COLORS.orange, 0.92);
+    this.aimGraphics.lineStyle(1, COLORS.creamMuted, 0.92);
     this.aimGraphics.lineBetween(landing.x, landing.y, final.x, final.y);
-    this.aimGraphics.strokeCircle(landing.x, landing.y, 8);
+    this.aimGraphics.strokeCircle(landing.x, landing.y, 7);
     this.aimGraphics.lineBetween(landing.x - 4, landing.y, landing.x + 4, landing.y);
     this.aimGraphics.lineBetween(landing.x, landing.y - 4, landing.x, landing.y + 4);
+
+    this.aimGraphics.lineStyle(1, COLORS.orange, 0.96);
+    this.aimGraphics.strokeCircle(fullLanding.x, fullLanding.y, 8);
+    this.aimGraphics.lineBetween(fullFinal.x - 5, fullFinal.y, fullFinal.x + 5, fullFinal.y);
+    this.aimGraphics.lineBetween(fullFinal.x, fullFinal.y - 5, fullFinal.x, fullFinal.y + 5);
+
+    this.playTargetText.setPosition(final.x, final.y - 7).setVisible(true);
+    const targetsOverlap =
+      Math.hypot(fullFinal.x - final.x, fullFinal.y - final.y) < 16;
+    this.fullTargetText
+      .setPosition(fullFinal.x, fullFinal.y + (targetsOverlap ? 15 : -7))
+      .setVisible(true);
+
+    const camera = {
+      position: this.ballPosition,
+      bearingDegrees: this.shotAimDegrees(),
+    };
+    const playView = projectWorldToCourseView(projection.visualEnd, camera);
+    const fullView = projectWorldToCourseView(fullProjection.visualEnd, camera);
+    if (playView.visible) {
+      this.aimGraphics.lineStyle(2, COLORS.white, 0.96);
+      this.aimGraphics.strokeCircle(playView.x, playView.y, 5);
+    }
+    if (fullView.visible) {
+      this.aimGraphics.lineStyle(2, COLORS.orange, 0.96);
+      this.aimGraphics.lineBetween(fullView.x - 5, fullView.y, fullView.x + 5, fullView.y);
+      this.aimGraphics.lineBetween(fullView.x, fullView.y - 5, fullView.x, fullView.y + 5);
+    }
   }
 
   private drawPlayingEnvironment(
@@ -758,8 +850,10 @@ export class GameScene extends Phaser.Scene {
     const seventyFiveAngle = meterAngleForPosition(0.75);
     radial(fiftyAngle, METER_RADIUS - 7, METER_RADIUS + 7, 3, COLORS.creamMuted);
     radial(seventyFiveAngle, METER_RADIUS - 7, METER_RADIUS + 7, 3, COLORS.creamMuted);
+    const suggestedPower = puttDifficulty
+      ? this.suggestedPuttPower()
+      : (this.currentPlan ?? this.buildCurrentShotPlan()).selected.power;
     if (puttDifficulty) {
-      const suggestedPower = this.suggestedPuttPower();
       arc(
         meterAngleForPosition(
           Math.max(0.03, suggestedPower - puttDifficulty.powerBandHalfWidth),
@@ -771,6 +865,16 @@ export class GameScene extends Phaser.Scene {
         5,
         0.34,
       );
+      radial(
+        meterAngleForPosition(suggestedPower),
+        METER_RADIUS - 10,
+        METER_RADIUS + 10,
+        2,
+        COLORS.white,
+        0.9,
+      );
+    }
+    if (!puttDifficulty) {
       radial(
         meterAngleForPosition(suggestedPower),
         METER_RADIUS - 10,
@@ -878,6 +982,8 @@ export class GameScene extends Phaser.Scene {
     this.statusText.setText(`SHOT ${this.strokeCount}`);
     this.instructionText.setText(this.contactFeedback(result));
     this.aimGraphics.clear();
+    this.playTargetText.setVisible(false);
+    this.fullTargetText.setVisible(false);
     this.setupBall.setVisible(false);
     this.playGolferSwing(result);
   }
@@ -1166,8 +1272,14 @@ export class GameScene extends Phaser.Scene {
       this.instructionText.setText(
         `WATER · +1 PENALTY · DROP AT ENTRY · ${lieLabel(this.currentLie)}`,
       );
+      this.penaltyBannerText
+        .setText('WATER\n+1 · DROP AT ENTRY')
+        .setVisible(true);
     } else if (result.penaltyType === 'outOfBounds') {
       this.instructionText.setText('OUT OF BOUNDS · +1 PENALTY · PREVIOUS SPOT');
+      this.penaltyBannerText
+        .setText('OUT OF BOUNDS\n+1 · PREVIOUS SPOT')
+        .setVisible(true);
     } else {
       this.instructionText.setText(
         `${Math.round(result.carryMetres)} CARRY + ${Math.round(
@@ -1201,7 +1313,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private directAimToPin(): number {
-    return Phaser.Math.Clamp(this.bearingToPin(), -30, 30);
+    return 0;
   }
 
   private bearingToPin(): number {
@@ -1216,9 +1328,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private shotAimDegrees(): number {
-    return this.currentLie === 'green'
-      ? this.bearingToPin() + this.aimDegrees
-      : this.aimDegrees;
+    return this.bearingToPin() + this.aimDegrees;
   }
 
   private normalizedDegrees(value: number): number {
@@ -1245,7 +1355,7 @@ export class GameScene extends Phaser.Scene {
 
   private distanceLabel(position: WorldPosition): string {
     const distance = distanceToPin(position);
-    return `${distance < 10 ? distance.toFixed(1) : Math.round(distance)} M LEFT`;
+    return `PIN ${distance < 10 ? distance.toFixed(1) : Math.round(distance)} M`;
   }
 
   private setGolferPose(pose: GolferPose): void {
