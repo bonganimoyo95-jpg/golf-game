@@ -13,6 +13,8 @@ import {
   type ShotResult,
   type WindDefinition,
 } from './physics/shotPhysics';
+import { puttingDifficultyForDistance } from './puttingDifficulty';
+import { minimumPowerForClub } from './shortGame';
 
 export const MINIMUM_FULL_SWING_POWER = 0.15;
 
@@ -28,6 +30,8 @@ export interface ShotPlan {
   directBearingDegrees: number;
   absoluteAimDegrees: number;
   selected: PlannedClubShot;
+  selectedLow: PlannedClubShot;
+  selectedHigh: PlannedClubShot;
   selectedFull: PlannedClubShot;
   recommended: PlannedClubShot;
 }
@@ -83,10 +87,11 @@ export function powerForTargetDistance(
     return putterPowerForDistance(club, targetDistance, input.startingLie);
   }
 
-  let bestPower = MINIMUM_FULL_SWING_POWER;
+  const minimumPower = minimumPowerForClub(club);
+  let bestPower = minimumPower;
   let bestDifference = Number.POSITIVE_INFINITY;
-  for (let step = 0; step <= 170; step += 1) {
-    const power = MINIMUM_FULL_SWING_POWER + (step / 170) * (1 - MINIMUM_FULL_SWING_POWER);
+  for (let step = 0; step <= 190; step += 1) {
+    const power = minimumPower + (step / 190) * (1 - minimumPower);
     const result = ratedResultAt(input, clubIndex, power);
     const difference = Math.abs(result.totalMetres - targetDistance);
     if (difference < bestDifference) {
@@ -94,7 +99,25 @@ export function powerForTargetDistance(
       bestPower = power;
     }
   }
-  return clamp(bestPower, MINIMUM_FULL_SWING_POWER, 1);
+  return clamp(bestPower, minimumPower, 1);
+}
+
+export function guidanceHalfWidth(
+  club: ClubDefinition,
+  distanceMetres: number,
+): number {
+  if (club.isPutter) {
+    return puttingDifficultyForDistance(distanceMetres).powerBandHalfWidth;
+  }
+  return club.shotStyle === 'chip' || club.shotStyle === 'splash' ? 0.08 : 0.055;
+}
+
+export function swingStrengthLabel(power: number, cannotReach = false): string {
+  if (cannotReach || power >= 0.96) return 'FULL';
+  if (power < 0.28) return 'TOUCH';
+  if (power < 0.58) return 'HALF';
+  if (power < 0.82) return 'THREE-QUARTER';
+  return 'STRONG';
 }
 
 function plannedClubShot(
@@ -121,12 +144,25 @@ export function buildShotPlan(input: ShotPlanInput): ShotPlan {
   );
   const selectedPower = powerForTargetDistance(input, input.selectedClubIndex);
   const recommendedPower = powerForTargetDistance(input, recommendedIndex);
+  const selectedClub = input.clubs[input.selectedClubIndex];
+  const halfWidth = guidanceHalfWidth(selectedClub, distanceToPin(input.start));
+  const minimumPower = minimumPowerForClub(selectedClub);
 
   return {
     distanceToPinMetres: distanceToPin(input.start),
     directBearingDegrees: bearingBetween(input.start, PIN_POSITION),
     absoluteAimDegrees: absoluteAimFromPin(input.start, input.relativeAimDegrees),
     selected: plannedClubShot(input, input.selectedClubIndex, selectedPower),
+    selectedLow: plannedClubShot(
+      input,
+      input.selectedClubIndex,
+      clamp(selectedPower - halfWidth, minimumPower, 1),
+    ),
+    selectedHigh: plannedClubShot(
+      input,
+      input.selectedClubIndex,
+      clamp(selectedPower + halfWidth, minimumPower, 1),
+    ),
     selectedFull: plannedClubShot(input, input.selectedClubIndex, 1),
     recommended: plannedClubShot(input, recommendedIndex, recommendedPower),
   };

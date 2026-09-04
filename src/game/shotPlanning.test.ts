@@ -6,6 +6,7 @@ import {
   buildShotPlan,
   penaltyWarning,
   powerForTargetDistance,
+  swingStrengthLabel,
 } from './shotPlanning';
 
 const planInput = {
@@ -77,6 +78,20 @@ describe('shot planning', () => {
     expect(penaltyWarning(water)).toBe('WATER');
     expect(penaltyWarning({ ...water, penaltyType: 'outOfBounds' })).toBe(
       'OUT OF BOUNDS',
+    );
+  });
+
+  it('provides a tolerance range without exposing one exact answer', () => {
+    const plan = buildShotPlan({
+      ...planInput,
+      start: { x: -33, y: 390 },
+      startingLie: 'fairway',
+      selectedClubIndex: 3,
+    });
+    expect(plan.selectedLow.power).toBeLessThan(plan.selected.power);
+    expect(plan.selectedHigh.power).toBeGreaterThan(plan.selected.power);
+    expect(swingStrengthLabel(plan.selected.power)).toMatch(
+      /TOUCH|HALF|THREE-QUARTER|STRONG|FULL/,
     );
   });
 });

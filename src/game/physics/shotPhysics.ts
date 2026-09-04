@@ -7,6 +7,7 @@ import {
   type WorldPosition,
 } from '../courseModel';
 import { evaluateCupCapture } from '../cupCapture';
+import { minimumPowerForClub } from '../shortGame';
 
 export interface WindDefinition {
   speed: number;
@@ -130,11 +131,19 @@ function addScaled(
 }
 
 interface PenaltyResolution {
+  visualEnd: WorldPosition;
+  finalLie: Lie;
   resolvedEnd: WorldPosition;
   resolvedLie: Lie;
   penaltyType?: 'water' | 'outOfBounds';
   penaltyEntry?: WorldPosition;
   dropPosition?: WorldPosition;
+}
+
+interface SegmentPenalty {
+  type: 'water' | 'outOfBounds';
+  entry: WorldPosition;
+  lastSafe: WorldPosition;
 }
 
 function pointBetween(
@@ -177,6 +186,27 @@ function waterDropAlongSegment(
   };
 }
 
+function firstPenaltyAlongGround(
+  start: WorldPosition,
+  end: WorldPosition,
+): SegmentPenalty | undefined {
+  const segmentMetres = distanceBetween(start, end);
+  if (segmentMetres < 0.01) return undefined;
+  const samples = Math.max(48, Math.ceil(segmentMetres * 4));
+  let lastSafe = { ...start };
+
+  for (let index = 1; index <= samples; index += 1) {
+    const point = pointBetween(start, end, index / samples);
+    const lie = getLieAt(point);
+    if (lie === 'water' || lie === 'outOfBounds') {
+      return { type: lie, entry: point, lastSafe };
+    }
+    lastSafe = point;
+  }
+
+  return undefined;
+}
+
 function resolvePenalty(
   start: WorldPosition,
   carryEnd: WorldPosition,
@@ -184,14 +214,16 @@ function resolvePenalty(
   landingLie: Lie,
   finalLie: Lie,
 ): PenaltyResolution {
-  if (landingLie === 'water' || finalLie === 'water') {
-    const segmentStart = landingLie === 'water' ? start : carryEnd;
-    const segmentEnd = landingLie === 'water' ? carryEnd : visualEnd;
-    const water = waterDropAlongSegment(segmentStart, segmentEnd);
+  if (landingLie === 'water') {
+    const water = waterDropAlongSegment(start, carryEnd);
     const dropPosition = water.dropPosition ?? start;
     const resolvedLie = getLieAt(dropPosition);
 
     return {
+      // The ball visibly lands where the flight ends. The separately recorded
+      // margin crossing determines the legal drop and penalty explanation.
+      visualEnd: { ...carryEnd },
+      finalLie: 'water',
       resolvedEnd: { ...dropPosition },
       resolvedLie: isPenaltyLie(resolvedLie) ? getLieAt(start) : resolvedLie,
       penaltyType: 'water',
@@ -200,15 +232,48 @@ function resolvePenalty(
     };
   }
 
-  if (landingLie === 'outOfBounds' || finalLie === 'outOfBounds') {
+  if (landingLie === 'outOfBounds') {
     return {
+      visualEnd: { ...carryEnd },
+      finalLie: 'outOfBounds',
       resolvedEnd: { ...start },
       resolvedLie: getLieAt(start),
       penaltyType: 'outOfBounds',
+      penaltyEntry: { ...carryEnd },
+    };
+  }
+
+  // A ball is allowed to fly over a hazard, but once it lands every metre of
+  // bounce and rollout is live. Sampling the complete ground segment prevents
+  // a fast ball from crossing a narrow creek or boundary between frames.
+  const groundPenalty = firstPenaltyAlongGround(carryEnd, visualEnd);
+  if (groundPenalty?.type === 'water') {
+    const resolvedLie = getLieAt(groundPenalty.lastSafe);
+    return {
+      visualEnd: { ...groundPenalty.entry },
+      finalLie: 'water',
+      resolvedEnd: { ...groundPenalty.lastSafe },
+      resolvedLie: isPenaltyLie(resolvedLie) ? getLieAt(start) : resolvedLie,
+      penaltyType: 'water',
+      penaltyEntry: { ...groundPenalty.entry },
+      dropPosition: { ...groundPenalty.lastSafe },
+    };
+  }
+
+  if (groundPenalty?.type === 'outOfBounds') {
+    return {
+      visualEnd: { ...groundPenalty.entry },
+      finalLie: 'outOfBounds',
+      resolvedEnd: { ...start },
+      resolvedLie: getLieAt(start),
+      penaltyType: 'outOfBounds',
+      penaltyEntry: { ...groundPenalty.entry },
     };
   }
 
   return {
+    visualEnd: { ...visualEnd },
+    finalLie,
     resolvedEnd: { ...visualEnd },
     resolvedLie: finalLie,
   };
@@ -218,7 +283,7 @@ function calculateShotWithContactBonus(
   input: ShotInput,
   applyContactBonus: boolean,
 ): ShotResult {
-  const power = clamp(input.power, input.club.isPutter ? 0.03 : 0.15, 1);
+  const power = clamp(input.power, minimumPowerForClub(input.club), 1);
   const accuracyError = clamp(input.accuracyError, -1, 1);
   const contactQuality = contactQualityForAccuracy(accuracyError);
   const lieTuning = LIE_TUNING[input.startingLie];
@@ -241,17 +306,19 @@ function calculateShotWithContactBonus(
       0,
     );
     const cupCapture = evaluateCupCapture(input.start, plannedEnd, PIN_POSITION);
-    const visualEnd = cupCapture.holed ? { ...PIN_POSITION } : plannedEnd;
-    const rolloutMetres = distanceBetween(input.start, visualEnd);
-    const finalLie = getLieAt(visualEnd);
-    const penalty = isPenaltyLie(finalLie);
+    const plannedVisualEnd = cupCapture.holed ? { ...PIN_POSITION } : plannedEnd;
+    const plannedFinalLie = getLieAt(plannedVisualEnd);
     const penaltyResolution = resolvePenalty(
       input.start,
       input.start,
-      visualEnd,
+      plannedVisualEnd,
       input.startingLie,
-      finalLie,
+      plannedFinalLie,
     );
+    const visualEnd = penaltyResolution.visualEnd;
+    const finalLie = penaltyResolution.finalLie;
+    const rolloutMetres = distanceBetween(input.start, visualEnd);
+    const penalty = penaltyResolution.penaltyType !== undefined;
 
     return {
       start: { ...input.start },
@@ -277,13 +344,17 @@ function calculateShotWithContactBonus(
       penaltyEntry: penaltyResolution.penaltyEntry,
       dropPosition: penaltyResolution.dropPosition,
       resolvedLie: penaltyResolution.resolvedLie,
-      holed: cupCapture.holed,
+      holed: cupCapture.holed && !penalty,
       strokeCost: penalty ? 2 : 1,
       club: input.club,
     };
   }
 
-  const powerDistanceScale = 0.32 + power * 0.68;
+  const shortGameShot =
+    input.club.shotStyle === 'chip' || input.club.shotStyle === 'splash';
+  const powerDistanceScale = shortGameShot
+    ? 0.06 + Math.pow(power, 1.15) * 0.94
+    : 0.32 + power * 0.68;
   const carryWithoutContactBonus =
     input.club.maxDistanceMetres * powerDistanceScale * lieTuning.distanceMultiplier;
   const carryBonusMetres = applyContactBonus
@@ -307,16 +378,27 @@ function calculateShotWithContactBonus(
     input.club.baseRolloutMetres *
     (0.35 + power * 0.65) *
     landingTuning.rolloutMultiplier;
-  const visualEnd = addScaled(carryEnd, shotDirection, rolloutMetres, { x: 0, y: 0 }, 0);
-  const finalLie = isPenaltyLie(landingLie) ? landingLie : getLieAt(visualEnd);
-  const penalty = isPenaltyLie(landingLie) || isPenaltyLie(finalLie);
+  const plannedVisualEnd = addScaled(
+    carryEnd,
+    shotDirection,
+    rolloutMetres,
+    { x: 0, y: 0 },
+    0,
+  );
+  const plannedFinalLie = isPenaltyLie(landingLie)
+    ? landingLie
+    : getLieAt(plannedVisualEnd);
   const penaltyResolution = resolvePenalty(
     input.start,
     carryEnd,
-    visualEnd,
+    plannedVisualEnd,
     landingLie,
-    finalLie,
+    plannedFinalLie,
   );
+  const visualEnd = penaltyResolution.visualEnd;
+  const finalLie = penaltyResolution.finalLie;
+  const resolvedRolloutMetres = distanceBetween(carryEnd, visualEnd);
+  const penalty = penaltyResolution.penaltyType !== undefined;
 
   return {
     start: { ...input.start },
@@ -327,7 +409,7 @@ function calculateShotWithContactBonus(
     landingLie,
     finalLie,
     carryMetres,
-    rolloutMetres,
+    rolloutMetres: resolvedRolloutMetres,
     totalMetres: distanceBetween(input.start, visualEnd),
     power,
     accuracyError,

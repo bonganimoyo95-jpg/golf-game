@@ -1,6 +1,6 @@
 # Fairways & Friends Pocket Golf
 
-An original browser golf mini-game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.11.0, the shot-planning and recovery-clarity release.
+An original, finished one-hole browser golf game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.12.0, the launch-readiness release.
 
 ## What works now
 
@@ -23,8 +23,9 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Expanded rated distances: Driver 250 m, 3-wood 220 m, Iron 165 m, Wedge 95 m and Putter 30 m
 - Left/right aiming and projected landing area
 - Pin-relative full-shot aiming that remains correct from behind or beside the green
-- Separate PLAY and FULL target markers on the map and projected course view
-- Selected-club carry/total breakdown, recommended club/power and a white meter power guide
+- A playable RANGE and separate FULL target on the map and projected course view
+- Selected-club carry/total breakdown plus qualitative club and swing-strength guidance
+- No exact answer-key percentage: players judge a shaded power window using 50% and 75% references
 - Visible full-shot flag plus explicit pre-shot hazard warnings and post-shot penalty/drop banners
 - Sleeker one-pass 3/4-circle swing meter with a slimmer rail, compact marker, visible contact window and putting-power target band
 - Faster downswing timing after higher-power selections
@@ -45,11 +46,15 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Fixed putting target with an independently adjustable aim line
 - Green scenery that retains the same horizon and course environment
 - Distance-scaled cup depth, corrected rear three-quarter putting poses with feet parallel to the target line, and perspective mowing lines
-- One-degree putting aim adjustments and a visible suggested-power marker
+- One-degree putting aim adjustments and a distance-scaled suggested-power band
 - Tee-only driver selection; the 3-wood is available from tee, fairway and rough but excluded from bunkers
 - Distance-scaled putting difficulty: short putts receive a wider timing window and slower return, while long putts narrow the window and accelerate the return without adding randomness
 - Short-distance putter power control and line-based cup capture
 - Cup-lip depth and a 230 ms ball-sink animation before the result screen
+- Automatic grass chip inside 45 metres and automatic bunker splash, both using the existing wedge slot
+- Usable touch-distance short-game power instead of the full-swing minimum carry floor
+- Complete bounce-and-roll hazard sampling, so crossing a creek or boundary cannot be missed between endpoints
+- A single, more demanding launch balance with tighter long-putt timing and cup capture
 - Smooth, capped three-percent carry bonus for pure full-swing contact, with no hidden putting bonus
 - Procedural swing, impact, landing and cup audio plus club-trail, impact-flash and terrain-contact effects
 - Hole completion with strokes and score relative to par
@@ -57,12 +62,16 @@ An original browser golf mini-game inspired by the compact aim-and-timing loop o
 - Keyboard and touch controls
 - Pause, restart and return-to-title controls
 - Pause behavior that freezes swing timers and ball-flight tweens together
-- Optional `?qa=1` scenario lab for tee, fairway, rough, bunker, putting, water and out-of-bounds checks
+- Automatic tab-hidden pause, persistent sound toggle and a replayable three-step How To Play guide
+- Tee-specific local best scores and a faster Play Again loop
+- Recoverable gameplay-asset loading errors and a title-art fallback
+- Optional `?qa=1` scenario lab for tee, fairway, rough, chip, bunker, putting, water and out-of-bounds checks
 - Deterministic per-shot replay logs, local persistence and QA-mode clipboard export
+- Playwright browser smoke tests plus GitHub Actions verification on every push and pull request
 - Deferred gameplay-art loading after the title screen
 - Native 352-pixel desktop canvas sizing for crisper pixel presentation
 
-Additional holes, advanced shot types and a full bespoke art-studio pipeline remain intentionally deferred. v0.11.0 still requires the hands-on Codespaces acceptance pass described in `docs/PROJECT_2_CHECKPOINT_5.md`.
+Additional holes, manual shot-shape controls and a full bespoke art-studio pipeline remain intentionally deferred. The release acceptance pass is in `docs/PROJECT_2_CHECKPOINT_6.md`.
 
 ## Run the game locally
 
@@ -104,11 +113,12 @@ Additional holes, advanced shot types and a full bespoke art-studio pipeline rem
 npm run typecheck
 npm test
 npm run build
+npm run test:browser
 ```
 
 The production website is generated in `dist/`. That folder is intentionally ignored by Git because it can be rebuilt at any time.
 
-The automated release baseline is `74` passing tests across `16` files.
+The automated release baseline is `86` unit tests across `20` files plus `2` running-browser smoke tests.
 
 ## QA scenario lab
 
@@ -130,6 +140,7 @@ Append `?qa=1` to the game URL, for example `http://localhost:5173/?qa=1`. The t
 - [`docs/PROJECT_2_CHECKPOINT_3.md`](docs/PROJECT_2_CHECKPOINT_3.md) — v0.9 putting perspective and game-feel acceptance record
 - [`docs/PROJECT_2_CHECKPOINT_4.md`](docs/PROJECT_2_CHECKPOINT_4.md) — v0.10 Azalea Bend, 3-wood, meter and putting acceptance record
 - [`docs/PROJECT_2_CHECKPOINT_5.md`](docs/PROJECT_2_CHECKPOINT_5.md) — v0.11 club-distance, planning and recovery acceptance record
+- [`docs/PROJECT_2_CHECKPOINT_6.md`](docs/PROJECT_2_CHECKPOINT_6.md) — v0.12 launch-readiness acceptance record
 
 ## Technical choices
 

@@ -3,6 +3,7 @@ import { ASSETS, golferAsset } from '../assets';
 import { GAME_WIDTH, SCENES } from '../constants';
 import { PROTOTYPE_HOLE } from '../data';
 import { scoreHole } from '../scoring';
+import { recordBestScore } from '../bestScore';
 import {
   PLAYER_PROFILE_REGISTRY_KEY,
   normalizePlayerProfile,
@@ -32,6 +33,7 @@ export class ResultScene extends Phaser.Scene {
     const profile = normalizePlayerProfile(
       this.registry.get(PLAYER_PROFILE_REGISTRY_KEY),
     );
+    const bestScore = recordBestScore(profile.tee, this.strokes);
     this.cameras.main.setBackgroundColor(COLORS.espresso);
     this.drawBackdrop();
 
@@ -93,6 +95,20 @@ export class ResultScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    this.add
+      .text(
+        245,
+        275,
+        bestScore.isNewBest ? 'NEW BEST!' : `BEST · ${bestScore.best} STROKES`,
+        {
+          fontFamily: FONT_FAMILY,
+          fontSize: '9px',
+          fontStyle: 'bold',
+          color: bestScore.isNewBest ? '#d8a43e' : '#c8b899',
+        },
+      )
+      .setOrigin(0.5);
+
     createButton(this, GAME_WIDTH / 2, 326, 190, 50, 'PLAY AGAIN', () => this.playAgain(), {
       fontSize: '14px',
     });
@@ -135,7 +151,7 @@ export class ResultScene extends Phaser.Scene {
   }
 
   private playAgain(): void {
-    this.scene.start(SCENES.holeIntro);
+    this.scene.start(SCENES.game);
   }
 
   private goToTitle(): void {

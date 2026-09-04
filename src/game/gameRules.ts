@@ -48,9 +48,15 @@ export function recommendedClubIndex(
   }
 
   const wedgeIndex = allowed.find((index) => clubs[index].id === 'wedge');
+  const wedgeRecommendationScale =
+    wedgeIndex !== undefined &&
+    (clubs[wedgeIndex].shotStyle === 'chip' ||
+      clubs[wedgeIndex].shotStyle === 'splash')
+      ? 1.05
+      : 0.92;
   if (
     wedgeIndex !== undefined &&
-    distanceMetres <= clubs[wedgeIndex].maxDistanceMetres * 0.92
+    distanceMetres <= clubs[wedgeIndex].maxDistanceMetres * wedgeRecommendationScale
   ) {
     return wedgeIndex;
   }

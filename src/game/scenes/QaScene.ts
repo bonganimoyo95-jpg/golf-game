@@ -38,13 +38,13 @@ export class QaScene extends Phaser.Scene {
     drawCourseMapBase(this, { x: 12, y: 66, width: 328, height: 112 });
 
     QA_SCENARIOS.forEach((scenario, index) => {
-      const column = index % 2;
-      const row = Math.floor(index / 2);
+      const column = index % 3;
+      const row = Math.floor(index / 3);
       createButton(
         this,
-        column === 0 ? 92 : 260,
-        207 + row * 43,
-        148,
+        62 + column * 114,
+        213 + row * 45,
+        104,
         34,
         scenario.label,
         () => this.startScenario(scenario),
@@ -57,7 +57,7 @@ export class QaScene extends Phaser.Scene {
       );
     });
 
-    createButton(this, GAME_WIDTH / 2, 402, 172, 38, 'BACK TO TITLE', () => {
+    createButton(this, GAME_WIDTH / 2, 374, 172, 38, 'BACK TO TITLE', () => {
       this.scene.start(SCENES.title);
     }, {
       fillColor: COLORS.tobacco,

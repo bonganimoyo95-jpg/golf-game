@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.12.0 — Launch readiness
+
+- Converted the original Hole-13 inspiration into the player-facing **Hole 13 · Azalea Bend** one-hole challenge.
+- Added automatic chips from grass inside 45 metres and automatic splash shots from nearby bunkers without adding another club control.
+- Added short-game power scaling down to touch distance instead of forcing the full-swing minimum carry.
+- Replaced exact PLAY percentages and white answer lines with qualitative swing-strength advice and a shaded playable range.
+- Retained honest pin distance, selected-club carry/total and a distinct full-shot endpoint.
+- Tightened the single launch balance, with distance-scaled putting speed, contact windows, power bands and cup capture.
+- Sampled the complete post-landing ground path so a ball rolling through water or out of bounds always triggers a visible penalty.
+- Added a three-step first-play tutorial that can be reopened from the pause menu.
+- Added persistent mute, automatic hidden-tab pause, tee-specific local best scores and immediate Play Again.
+- Added recoverable gameplay-asset loading errors, a title fallback and mobile safe-area/overscroll handling.
+- Added an auto-chip QA scenario and reorganized the QA Lab into a compact nine-scenario grid.
+- Added two Playwright browser tests covering scene navigation, tutorial, pause/resume, a complete shot, driver removal, auto-chip and putting difficulty.
+- Added GitHub Actions verification for typecheck, 86 unit tests, production build and browser smoke tests.
+- Updated deterministic replay records to the v0.12 format.
+
 ## 0.11.0 — Shot planning and recovery clarity
 
 - Increased the rated club ladder to Driver 250 m, 3-wood 220 m, Iron 165 m, Wedge 95 m and Putter 30 m.

@@ -5,6 +5,35 @@ type AudioContextWithWebkit = typeof AudioContext & {
 };
 
 let sharedContext: AudioContext | undefined;
+let muted: boolean | undefined;
+export const AUDIO_MUTED_STORAGE_KEY = 'fairways-friends-audio-muted-v1';
+
+export function isGameMuted(): boolean {
+  if (muted !== undefined) return muted;
+  if (typeof window === 'undefined') return false;
+  try {
+    muted = window.localStorage.getItem(AUDIO_MUTED_STORAGE_KEY) === 'yes';
+  } catch {
+    muted = false;
+  }
+  return muted;
+}
+
+export function setGameMuted(value: boolean): boolean {
+  muted = value;
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(AUDIO_MUTED_STORAGE_KEY, value ? 'yes' : 'no');
+    } catch {
+      // Audio still toggles for this session when storage is unavailable.
+    }
+  }
+  return muted;
+}
+
+export function toggleGameMuted(): boolean {
+  return setGameMuted(!isGameMuted());
+}
 
 function audioContext(): AudioContext | undefined {
   if (typeof window === 'undefined') return undefined;
@@ -19,7 +48,7 @@ function audioContext(): AudioContext | undefined {
 }
 
 export function unlockGameAudio(): void {
-  audioContext();
+  if (!isGameMuted()) audioContext();
 }
 
 function tone(
@@ -30,6 +59,7 @@ function tone(
   type: OscillatorType,
   delaySeconds = 0,
 ): void {
+  if (isGameMuted()) return;
   const context = audioContext();
   if (!context) return;
   const startsAt = context.currentTime + delaySeconds;

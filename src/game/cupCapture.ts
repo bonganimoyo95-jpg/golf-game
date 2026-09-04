@@ -1,7 +1,8 @@
 import { distanceBetween, type WorldPosition } from './courseModel';
 
-export const CUP_CAPTURE_RADIUS_METRES = 0.48;
-export const MAX_CAPTURE_OVERRUN_METRES = 1.8;
+export const CUP_CAPTURE_RADIUS_METRES = 0.44;
+export const MIN_CUP_CAPTURE_RADIUS_METRES = 0.3;
+export const MAX_CAPTURE_OVERRUN_METRES = 1.4;
 
 export interface CupCaptureResult {
   holed: boolean;
@@ -11,6 +12,14 @@ export interface CupCaptureResult {
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));
+}
+
+export function cupCaptureRadiusForDistance(distanceMetres: number): number {
+  const distanceShare = clamp((distanceMetres - 3) / 19, 0, 1);
+  return (
+    CUP_CAPTURE_RADIUS_METRES -
+    distanceShare * (CUP_CAPTURE_RADIUS_METRES - MIN_CUP_CAPTURE_RADIUS_METRES)
+  );
 }
 
 export function evaluateCupCapture(
@@ -42,11 +51,13 @@ export function evaluateCupCapture(
   const closestDistanceMetres = distanceBetween(closestPoint, cup);
   const overrunMetres = distanceBetween(closestPoint, end);
   const travelledTowardCup = projection > 0;
+  const startingDistanceMetres = distanceBetween(start, cup);
+  const captureRadius = cupCaptureRadiusForDistance(startingDistanceMetres);
 
   return {
     holed:
       travelledTowardCup &&
-      closestDistanceMetres <= CUP_CAPTURE_RADIUS_METRES &&
+      closestDistanceMetres <= captureRadius &&
       overrunMetres <= MAX_CAPTURE_OVERRUN_METRES,
     closestDistanceMetres,
     overrunMetres,

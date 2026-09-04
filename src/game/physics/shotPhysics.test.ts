@@ -133,6 +133,51 @@ describe('shot physics', () => {
     expect(getLieAt(waterShot.resolvedEnd)).not.toBe('water');
   });
 
+  it('detects a creek crossed during rollout even when the planned endpoint is safe', () => {
+    const rollingClub = {
+      ...CLUBS[1],
+      maxDistanceMetres: 28,
+      baseRolloutMetres: 30,
+      windSensitivity: 0,
+    };
+    const result = calculateShot({
+      ...baseInput,
+      start: { x: -26, y: 400 },
+      club: rollingClub,
+      startingLie: 'fairway',
+      wind: { speed: 0, bearingDegrees: 0 },
+      aimDegrees: 0,
+    });
+
+    expect(result.landingLie).not.toBe('water');
+    expect(result.penaltyType).toBe('water');
+    expect(result.finalLie).toBe('water');
+    expect(result.penaltyEntry).toBeDefined();
+    expect(result.dropPosition).toEqual(result.resolvedEnd);
+    expect(getLieAt(result.resolvedEnd)).not.toBe('water');
+  });
+
+  it('allows an airborne shot to clear the creek and land safely', () => {
+    const carryClub = {
+      ...CLUBS[2],
+      maxDistanceMetres: 60,
+      baseRolloutMetres: 0,
+      windSensitivity: 0,
+    };
+    const result = calculateShot({
+      ...baseInput,
+      start: { x: -26, y: 400 },
+      club: carryClub,
+      startingLie: 'fairway',
+      wind: { speed: 0, bearingDegrees: 0 },
+      aimDegrees: 0,
+    });
+
+    expect(result.carryEnd.y).toBeGreaterThan(451);
+    expect(result.penalty).toBe(false);
+    expect(result.resolvedLie).toBe('green');
+  });
+
   it('recognizes a shot that lands in either greenside bunker', () => {
     const start = { x: -33, y: 390 };
     const bunker = { x: -59, y: 485 };

@@ -9,6 +9,7 @@ export type QaScenarioId =
   | 'fairway'
   | 'rough'
   | 'bunker'
+  | 'chip'
   | 'green-short'
   | 'green-long'
   | 'water-drop'
@@ -58,16 +59,25 @@ export const QA_SCENARIOS: readonly QaScenario[] = [
   {
     id: 'bunker',
     label: 'BUNKER',
-    instruction: 'VERIFY SAND OVERRIDES THE GREEN',
+    instruction: 'VERIFY AUTO SPLASH AND SAND LIE',
     position: { x: -59, y: 485 },
     expectedLie: 'bunker',
     clubIndex: 3,
     aimDegrees: 10,
   },
   {
+    id: 'chip',
+    label: 'AUTO CHIP',
+    instruction: 'VERIFY WEDGE BECOMES CHIP INSIDE 45 M',
+    position: { x: -5, y: 455 },
+    expectedLie: 'rough',
+    clubIndex: 3,
+    aimDegrees: 0,
+  },
+  {
     id: 'green-short',
     label: 'PUTT 6 M',
-    instruction: 'VERIFY CUP LINE, FACING AND POWER GUIDE',
+    instruction: 'VERIFY CUP LINE, FACING AND POWER BAND',
     position: { x: -33, y: 464 },
     expectedLie: 'green',
     clubIndex: 4,
@@ -76,7 +86,7 @@ export const QA_SCENARIOS: readonly QaScenario[] = [
   {
     id: 'green-long',
     label: 'PUTT 18 M',
-    instruction: 'VERIFY LONG-PUTT POWER GUIDE',
+    instruction: 'VERIFY NARROWER LONG-PUTT POWER BAND',
     position: { x: -33, y: 452 },
     expectedLie: 'green',
     clubIndex: 4,

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAMEPLAY_ASSET_PATHS } from '../assets';
 import { GAME_WIDTH, SCENES } from '../constants';
 import { COLORS, FONT_FAMILY } from '../theme';
+import { createButton } from '../ui/createButton';
 
 interface LoadingSceneData {
   nextScene?: string;
@@ -9,6 +10,7 @@ interface LoadingSceneData {
 
 export class LoadingScene extends Phaser.Scene {
   private nextScene: string = SCENES.golferSelect;
+  private failedAssets: string[] = [];
 
   constructor() {
     super(SCENES.loading);
@@ -16,6 +18,7 @@ export class LoadingScene extends Phaser.Scene {
 
   init(data: LoadingSceneData): void {
     this.nextScene = data.nextScene ?? SCENES.golferSelect;
+    this.failedAssets = [];
   }
 
   preload(): void {
@@ -46,6 +49,9 @@ export class LoadingScene extends Phaser.Scene {
       fill.setDisplaySize(Math.max(1, 238 * progress), 8);
       percentage.setText(`${Math.round(progress * 100)}%`);
     });
+    this.load.on('loaderror', (file: Phaser.Loader.File) => {
+      this.failedAssets.push(file.key);
+    });
 
     for (const [key, path] of GAMEPLAY_ASSET_PATHS) {
       if (!this.textures.exists(key)) this.load.image(key, path);
@@ -53,6 +59,38 @@ export class LoadingScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.scene.start(this.nextScene);
+    if (this.failedAssets.length === 0) {
+      this.scene.start(this.nextScene);
+      return;
+    }
+
+    this.add
+      .rectangle(GAME_WIDTH / 2, 292, 292, 178, COLORS.tobacco)
+      .setStrokeStyle(2, COLORS.cream);
+    this.add
+      .text(GAME_WIDTH / 2, 242, 'COURSE DID NOT LOAD', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#f3e6c8',
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(GAME_WIDTH / 2, 270, 'CHECK YOUR CONNECTION AND TRY AGAIN.', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '8px',
+        color: '#c8b899',
+      })
+      .setOrigin(0.5);
+    createButton(this, 113, 326, 150, 40, 'RETRY', () => {
+      this.scene.restart({ nextScene: this.nextScene });
+    });
+    createButton(this, 269, 326, 144, 40, 'TITLE', () => {
+      this.scene.start(SCENES.title);
+    }, {
+      fillColor: COLORS.brownLight,
+      textColor: '#f3e6c8',
+      fontSize: '10px',
+    });
   }
 }

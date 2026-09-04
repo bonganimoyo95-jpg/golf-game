@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CUP_CAPTURE_RADIUS_METRES,
+  cupCaptureRadiusForDistance,
   MAX_CAPTURE_OVERRUN_METRES,
   evaluateCupCapture,
 } from './cupCapture';
@@ -14,10 +15,16 @@ describe('cup capture', () => {
     expect(result.holed).toBe(true);
   });
 
-  it('gives a gently paced near-line putt a beginner-friendly capture', () => {
+  it('gives a gently paced short putt a readable capture', () => {
     const result = evaluateCupCapture({ x: 0, y: 0 }, { x: 0.4, y: 10.7 }, cup);
 
     expect(result.holed).toBe(true);
+  });
+
+  it('requires a tighter line as putting distance increases', () => {
+    expect(cupCaptureRadiusForDistance(4)).toBeGreaterThan(
+      cupCaptureRadiusForDistance(20),
+    );
   });
 
   it('rejects a putt that misses the cup laterally', () => {

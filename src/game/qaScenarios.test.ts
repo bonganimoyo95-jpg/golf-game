@@ -3,6 +3,8 @@ import { CLUBS, PROTOTYPE_HOLE } from './data';
 import { calculateShot } from './physics/shotPhysics';
 import { QA_SCENARIOS, resolveQaScenario } from './qaScenarios';
 import { absoluteAimFromPin } from './shotPlanning';
+import { effectiveClubForShot } from './shortGame';
+import { distanceToPin } from './courseModel';
 
 const profile = {
   gender: 'female' as const,
@@ -42,5 +44,21 @@ describe('QA scenarios', () => {
       });
       expect(result.penaltyType).toBe(penaltyType);
     }
+  });
+
+  it('includes direct probes for both automatic short-game styles', () => {
+    const chip = resolveQaScenario('chip', profile)!;
+    const bunker = resolveQaScenario('bunker', profile)!;
+    expect(
+      effectiveClubForShot(CLUBS[chip.clubIndex], distanceToPin(chip.position), chip.lie)
+        .shotStyle,
+    ).toBe('chip');
+    expect(
+      effectiveClubForShot(
+        CLUBS[bunker.clubIndex],
+        distanceToPin(bunker.position),
+        bunker.lie,
+      ).shotStyle,
+    ).toBe('splash');
   });
 });

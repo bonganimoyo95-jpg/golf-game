@@ -28,10 +28,11 @@ export function puttingDifficultyForDistance(
         : 'PRECISION';
 
   return {
-    // A short putt has roughly triple the timing window of a 25 m putt.
-    contactWindow: 0.32 - distanceShare * 0.215,
-    meterSpeedMultiplier: 0.47 + distanceShare * 0.2,
-    powerBandHalfWidth: 0.052 - distanceShare * 0.032,
+    // One launch difficulty: short putts remain readable, while a long putt
+    // demands meaningfully cleaner power and contact than the old friendly tune.
+    contactWindow: 0.28 - distanceShare * 0.2,
+    meterSpeedMultiplier: 0.5 + distanceShare * 0.26,
+    powerBandHalfWidth: 0.045 - distanceShare * 0.03,
     label,
   };
 }

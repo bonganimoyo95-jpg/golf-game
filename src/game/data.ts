@@ -13,6 +13,7 @@ export interface ClubDefinition {
   dispersionDegrees: number;
   windSensitivity: number;
   isPutter: boolean;
+  shotStyle?: 'standard' | 'chip' | 'splash';
 }
 
 export const CLUBS: readonly ClubDefinition[] = [
@@ -141,7 +142,7 @@ export const LIE_TUNING: Readonly<Record<Lie, LieTuning>> = {
 };
 
 export const PROTOTYPE_HOLE = {
-  number: 1,
+  number: 13,
   name: 'Azalea Bend',
   par: 5,
   distanceMetres: 476,

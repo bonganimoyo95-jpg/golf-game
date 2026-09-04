@@ -2,9 +2,10 @@ import Phaser from 'phaser';
 import { ASSETS } from '../assets';
 import { GAME_WIDTH, SCENES } from '../constants';
 import { isQaMode } from '../qaMode';
+import { isGameMuted, toggleGameMuted } from '../gameAudio';
 import { QA_SCENARIO_REGISTRY_KEY } from '../qaScenarios';
 import { COLORS, FONT_FAMILY } from '../theme';
-import { createButton } from '../ui/createButton';
+import { createButton, setButtonLabel } from '../ui/createButton';
 
 export class TitleScene extends Phaser.Scene {
   private enterKey!: Phaser.Input.Keyboard.Key;
@@ -19,13 +20,33 @@ export class TitleScene extends Phaser.Scene {
 
     const qaMode = isQaMode();
 
+    const soundButton = createButton(
+      this,
+      316,
+      22,
+      58,
+      30,
+      isGameMuted() ? 'MUTED' : 'SOUND',
+      () => {
+        const nowMuted = toggleGameMuted();
+        setButtonLabel(soundButton, nowMuted ? 'MUTED' : 'SOUND');
+      },
+      {
+        fillColor: COLORS.brownLight,
+        hoverColor: COLORS.marigold,
+        textColor: '#f3e6c8',
+        fontSize: '8px',
+        depth: 5,
+      },
+    );
+
     createButton(
       this,
       qaMode ? 119 : GAME_WIDTH / 2,
       353,
       qaMode ? 198 : 188,
       52,
-      'PLAY PRACTICE',
+      'PLAY ROUND',
       () => this.startGame(),
       { fontSize: '15px' },
     );
@@ -48,7 +69,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, 423, 'FAIRWAYS & FRIENDS · PRACTICE ROUND', {
+      .text(GAME_WIDTH / 2, 423, 'AZALEA BEND · ONE-HOLE CHALLENGE', {
         fontFamily: FONT_FAMILY,
         fontSize: '9px',
         color: '#76503a',
@@ -74,10 +95,31 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private drawBackdrop(): void {
-    this.add
-      .image(0, 0, ASSETS.titleCover)
-      .setOrigin(0)
-      .setDisplaySize(GAME_WIDTH, 440);
+    if (this.textures.exists(ASSETS.titleCover)) {
+      this.add
+        .image(0, 0, ASSETS.titleCover)
+        .setOrigin(0)
+        .setDisplaySize(GAME_WIDTH, 440);
+    } else {
+      const fallback = this.add.graphics();
+      fallback.fillGradientStyle(
+        COLORS.espresso,
+        COLORS.espresso,
+        COLORS.rough,
+        COLORS.rough,
+        1,
+      );
+      fallback.fillRect(0, 0, GAME_WIDTH, 440);
+      this.add
+        .text(GAME_WIDTH / 2, 170, 'FAIRWAYS & FRIENDS\nPOCKET GOLF', {
+          fontFamily: FONT_FAMILY,
+          fontSize: '24px',
+          fontStyle: 'bold',
+          align: 'center',
+          color: '#f3e6c8',
+        })
+        .setOrigin(0.5);
+    }
 
     const graphics = this.add.graphics();
     graphics.fillStyle(COLORS.espresso, 0.72);

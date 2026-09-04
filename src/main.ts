@@ -45,4 +45,11 @@ const config: Phaser.Types.Core.GameConfig = {
   ],
 };
 
-new Phaser.Game(config);
+declare global {
+  interface Window {
+    __FAIRWAYS_GAME__?: Phaser.Game;
+  }
+}
+
+const game = new Phaser.Game(config);
+window.__FAIRWAYS_GAME__ = game;

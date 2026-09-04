@@ -72,3 +72,11 @@ export function setButtonSelected(
     selected ? COLORS.marigold : (background.getData('normal-fill') as number),
   );
 }
+
+export function setButtonLabel(
+  button: Phaser.GameObjects.Container,
+  label: string,
+): void {
+  const text = button.getAt(1) as Phaser.GameObjects.Text;
+  text.setText(label);
+}
