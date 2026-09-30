@@ -12,14 +12,17 @@
 
 html,
 body {
+  width: 100%;
+  height: 100%;
   min-width: 320px;
-  min-height: 100%;
+  min-height: 0;
   margin: 0;
+  overflow: hidden;
   overscroll-behavior: none;
 }
 
 body {
-  min-height: 100vh;
+  min-height: 0;
   background:
     radial-gradient(circle at 50% 0%, rgba(217, 107, 43, 0.17), transparent 34rem),
     linear-gradient(180deg, #2d1b13 0%, #140c09 100%);
@@ -33,11 +36,15 @@ canvas {
 }
 
 .page-shell {
-  min-height: 100vh;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   display: grid;
   place-items: center;
   padding: max(20px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
     max(20px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  overflow: hidden;
 }
 
 .game-card {
@@ -122,6 +129,35 @@ kbd {
   .game-card {
     width: min(100%, 330px);
     gap: 6px;
+  }
+
+  .game-heading,
+  .control-note {
+    display: none;
+  }
+}
+
+/* The game is also opened in a 4:5 iframe. At that size, title and control
+   copy must not force the iframe itself to scroll. Let the canvas use the
+   available viewport while Phaser scales its fixed 352 × 440 game surface. */
+@media (max-height: 620px) {
+  .page-shell {
+    padding: max(4px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right))
+      max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+  }
+
+  .game-card {
+    width: min(
+      100%,
+      352px,
+      calc(80vh - 6.4px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+    );
+    width: min(
+      100%,
+      352px,
+      calc(80dvh - 6.4px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+    );
+    gap: 0;
   }
 
   .game-heading,

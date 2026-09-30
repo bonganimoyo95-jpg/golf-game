@@ -1,10 +1,12 @@
 # Fairways & Friends Pocket Golf
 
-An original, finished one-hole browser golf game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.12.0, the launch-readiness release.
+An original, finished one-hole browser golf game inspired by the compact aim-and-timing loop of early mobile golf games. This repository contains v0.12.1, the mobile-fit and shot-guidance polish release.
 
 ## What works now
 
 - Responsive 352 × 440 Phaser canvas
+- Embedded and short-screen layout that keeps the full 4:5 game visible without page scrolling
+- Brief shot recommendations that fade away after 1.5 seconds, leaving the swing meter clear
 - Photo-derived male and female pixel-art golfers based on the Fairways & Friends hosts
 - Fairways & Friends Pocket Golf illustrated cover screen
 - Pre-round golfer, right/left-handed stance and independent tee selection
@@ -68,6 +70,7 @@ An original, finished one-hole browser golf game inspired by the compact aim-and
 - Optional `?qa=1` scenario lab for tee, fairway, rough, chip, bunker, putting, water and out-of-bounds checks
 - Deterministic per-shot replay logs, local persistence and QA-mode clipboard export
 - Playwright browser smoke tests plus GitHub Actions verification on every push and pull request
+- Automatic GitHub Pages publishing from `dist/` after verification succeeds on `main`
 - Deferred gameplay-art loading after the title screen
 - Native 352-pixel desktop canvas sizing for crisper pixel presentation
 
@@ -118,7 +121,7 @@ npm run test:browser
 
 The production website is generated in `dist/`. That folder is intentionally ignored by Git because it can be rebuilt at any time.
 
-The automated release baseline is `86` unit tests across `20` files plus `2` running-browser smoke tests.
+The automated release baseline is `86` unit tests across `20` files plus `4` running-browser smoke tests.
 
 ## QA scenario lab
 

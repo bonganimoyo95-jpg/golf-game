@@ -144,3 +144,53 @@ test('runs the auto-chip and distance-scaled putting scenarios', async ({ page }
 
   expect(longBand).toBeLessThan(shortBand);
 });
+
+test('fits the embedded portrait game without making the page scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 352, height: 440 });
+  await page.goto('/');
+  const canvas = page.locator('#game-container canvas');
+  await expect(canvas).toBeVisible();
+
+  const layout = await page.evaluate(() => {
+    const game = document.querySelector<HTMLElement>('#game-container')!;
+    const rect = game.getBoundingClientRect();
+    return {
+      viewportHeight: window.innerHeight,
+      documentHeight: document.documentElement.scrollHeight,
+      bodyHeight: document.body.scrollHeight,
+      ratio: rect.height / rect.width,
+      headingDisplay: getComputedStyle(document.querySelector('.game-heading')!).display,
+    };
+  });
+
+  expect(layout.documentHeight).toBeLessThanOrEqual(layout.viewportHeight);
+  expect(layout.bodyHeight).toBeLessThanOrEqual(layout.viewportHeight);
+  expect(layout.ratio).toBeCloseTo(1.25, 2);
+  expect(layout.headingDisplay).toBe('none');
+});
+
+test('shows shot advice briefly, then clears it from the meter area', async ({ page }) => {
+  await page.setViewportSize({ width: 352, height: 440 });
+  await page.goto('/?qa=1');
+  await waitForScene(page, 'TitleScene');
+  await clickGamePoint(page, 293, 353);
+  await waitForScene(page, 'QaScene');
+  await clickGamePoint(page, 176, 258);
+  await waitForScene(page, 'GameScene');
+
+  const initialTip = await page.evaluate(() => {
+    const scene = window.__FAIRWAYS_GAME__?.scene.getScene('GameScene') as unknown as {
+      instructionText?: { text?: string; visible?: boolean };
+    };
+    return { text: scene?.instructionText?.text, visible: scene?.instructionText?.visible };
+  });
+  expect(initialTip.visible).toBe(true);
+  expect(initialTip.text).toBeTruthy();
+
+  await expect.poll(() => page.evaluate(() => {
+    const scene = window.__FAIRWAYS_GAME__?.scene.getScene('GameScene') as unknown as {
+      instructionText?: { visible?: boolean };
+    };
+    return scene?.instructionText?.visible;
+  }), { timeout: 3_000 }).toBe(false);
+});

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.1 — Screen fit and shot guidance
+
+- Fit the 4:5 game canvas to short iframe and mobile viewports, and prevent page scrolling while playing.
+- Hide outer-page title and control copy when the viewport is compact so the full game remains visible.
+- Convert shot recommendations and swing prompts into short messages that fade after 1.5 seconds.
+- Remove the duplicate guidance line beside the swing meter to reduce visual clutter.
+- Added browser checks for the embedded 352 × 440 viewport and disappearing shot tips.
+- Publish the verified production build to GitHub Pages from `main`.
+
 ## 0.12.0 — Launch readiness
 
 - Converted the original Hole-13 inspiration into the player-facing **Hole 13 · Azalea Bend** one-hole challenge.
