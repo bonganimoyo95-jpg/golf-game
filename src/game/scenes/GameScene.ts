@@ -142,6 +142,7 @@ export class GameScene extends Phaser.Scene {
   private profileText!: Phaser.GameObjects.Text;
   private cameraText!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
+  private instructionFade?: Phaser.Tweens.Tween;
   private meterLabel!: Phaser.GameObjects.Text;
   private meterFiftyLabel!: Phaser.GameObjects.Text;
   private meterSeventyFiveLabel!: Phaser.GameObjects.Text;
@@ -220,7 +221,7 @@ export class GameScene extends Phaser.Scene {
       if (advance.reachedMaximum) {
         this.selectedPower = 1;
         this.phase = 'accuracy';
-        this.instructionText.setText('MAX POWER · STOP AT THE WHITE LINE');
+        this.showInstruction('MAX · TAP NEAR WHITE');
       }
       this.drawMeter();
     } else if (this.phase === 'accuracy') {
@@ -364,6 +365,9 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(8);
+    // This line repeated the club, distance, and recommendation information
+    // already shown elsewhere, directly beside the swing meter.
+    this.cameraText.setVisible(false);
     this.instructionText = this.add
       .text(176, 345, '', {
         ...this.headerStyle('#24150f', 7),
@@ -540,19 +544,16 @@ export class GameScene extends Phaser.Scene {
             this.currentLie,
           ).toUpperCase()}`,
     );
-    this.instructionText.setText(
-      selectedWarning
-        ? `DANGER · PLAY TARGET IS ${selectedWarning}`
-        : fullWarning && plan.selected.power < 0.995
-          ? `DANGER · FULL SWING REACHES ${fullWarning}`
-          : this.qaScenario && this.strokeCount === 0
-            ? `QA · ${this.qaScenario.instruction}`
-            : this.currentLie === 'green'
-              ? 'FACE THE CUP · READ LINE · PRESS SWING'
-              : `RECOMMEND ${recommendedClub.shortName} · ${
-                  recommendedStrength
-                } · SHADED RANGE`,
-    );
+    const shotTip = selectedWarning
+      ? `DANGER · TARGET ${selectedWarning}`
+      : fullWarning && plan.selected.power < 0.995
+        ? `DANGER · FULL TO ${fullWarning}`
+        : this.qaScenario && this.strokeCount === 0
+          ? `QA · ${this.qaScenario.instruction}`
+          : this.currentLie === 'green'
+            ? 'PUTT TO CUP · PRESS SWING'
+            : `TRY ${recommendedClub.shortName} · ${recommendedStrength}`;
+    this.showInstruction(shotTip);
     this.meterLabel.setText(
       this.currentLie === 'green'
         ? 'PUTT RANGE'
@@ -951,7 +952,7 @@ export class GameScene extends Phaser.Scene {
       this.phase = 'power';
       this.meterPosition = 0;
       this.selectedPower = 0;
-      this.instructionText.setText('PRESS SWING ONCE TO LOCK POWER');
+      this.showInstruction('TAP SWING TO SET POWER');
       this.drawMeter();
       return;
     }
@@ -961,7 +962,7 @@ export class GameScene extends Phaser.Scene {
         minimumPowerForClub(this.currentClub()),
       );
       this.phase = 'accuracy';
-      this.instructionText.setText('STOP THE RETURN AT THE WHITE LINE');
+      this.showInstruction('TAP NEAR THE WHITE LINE');
       this.drawMeter();
       return;
     }
@@ -985,7 +986,7 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'result';
     this.strokeCount += result.strokeCost;
     this.statusText.setText(`SHOT ${this.strokeCount}`);
-    this.instructionText.setText(this.contactFeedback(result));
+    this.showInstruction(this.contactFeedback(result));
     this.aimGraphics.clear();
     this.playTargetText.setVisible(false);
     this.fullTargetText.setVisible(false);
@@ -1003,6 +1004,25 @@ export class GameScene extends Phaser.Scene {
       return 'PURE CONTACT!';
     }
     return result.accuracyError > 0 ? 'EARLY CONTACT!' : 'LATE CONTACT!';
+  }
+
+  private showInstruction(message: string, visibleForMs = 1500): void {
+    this.instructionFade?.stop();
+    this.instructionFade = undefined;
+    this.instructionText.setText(message).setAlpha(1).setVisible(message.length > 0);
+    if (!message) return;
+
+    this.instructionFade = this.tweens.add({
+      targets: this.instructionText,
+      alpha: 0,
+      delay: visibleForMs,
+      duration: 220,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        this.instructionText.setVisible(false);
+        this.instructionFade = undefined;
+      },
+    });
   }
 
   private playGolferSwing(result: ShotResult): void {
@@ -1190,7 +1210,7 @@ export class GameScene extends Phaser.Scene {
 
   private animateBallIntoCup(result: ShotResult): void {
     const cup = this.cupScreenPosition(result.start);
-    this.instructionText.setText('DROPS...');
+    this.showInstruction('DROPS…', 700);
     this.meterLabel.setText('CUP');
     playCupDrop();
     this.tweens.add({
@@ -1263,7 +1283,7 @@ export class GameScene extends Phaser.Scene {
 
     if (result.holed) {
       this.currentLie = 'green';
-      this.instructionText.setText('IN THE CUP!');
+      this.showInstruction('IN THE CUP!');
       this.meterLabel.setText('HOLED');
       this.aimGraphics.clear();
       if (this.strokeCount < PROTOTYPE_HOLE.par) this.setGolferPose('celebrate');
@@ -1274,22 +1294,20 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (result.penaltyType === 'water') {
-      this.instructionText.setText(
-        `WATER · +1 PENALTY · DROP AT ENTRY · ${lieLabel(this.currentLie)}`,
-      );
+      this.showInstruction('WATER · +1 PENALTY');
       this.penaltyBannerText
         .setText('WATER\n+1 · DROP AT ENTRY')
         .setVisible(true);
     } else if (result.penaltyType === 'outOfBounds') {
-      this.instructionText.setText('OUT OF BOUNDS · +1 PENALTY · PREVIOUS SPOT');
+      this.showInstruction('OUT OF BOUNDS · +1 PENALTY');
       this.penaltyBannerText
         .setText('OUT OF BOUNDS\n+1 · PREVIOUS SPOT')
         .setVisible(true);
     } else {
-      this.instructionText.setText(
-        `${Math.round(result.carryMetres)} CARRY + ${Math.round(
+      this.showInstruction(
+        `CARRY ${Math.round(result.carryMetres)} · ROLL ${Math.round(
           result.rolloutMetres,
-        )} ROLL · ${lieLabel(this.currentLie)}`,
+        )}`,
       );
     }
 
